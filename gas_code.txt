@@ -1,0 +1,69 @@
+// どら山 在庫ダッシュボード 書き込み/読み取り受け口（Google Apps Script Web App）
+// doGet: 通常=全在庫をJSONPで返す / action=inc=店舗(s)・倉庫(w)を±更新して新値を返す
+var SHEET_ID = '14gFJiuVpuGT-GwDhGw-plVqbX5ulKY31g7fvRtwGJ8k';
+var SHEET_NAME = '商品マスタ';
+var TOKEN = 'dorayama-zaiko-2026';
+
+function sheet_(){ return SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME); }
+function num_(x){ var n = Number(String(x).replace(/,/g,'').trim()); return isNaN(n) ? null : n; }
+
+function readAll_(){
+  var vals = sheet_().getDataRange().getValues();
+  var head = vals[0];
+  function gi(n){ return head.indexOf(n); }
+  var ci = { id:gi('商品ID'), name:gi('商品名'), cat:gi('カテゴリー'), w:gi('倉庫数量'), s:gi('店舗在庫'), mn:gi('最低在庫'), ship:gi('配送状況'), eta:gi('お届け予定'), exp:gi('賞味期限') };
+  var items = [];
+  for (var r=1; r<vals.length; r++){
+    var row = vals[r];
+    var name = String(row[ci.name]||'').trim();
+    if (!name) continue;
+    var w = num_(row[ci.w]) || 0;
+    var s = num_(row[ci.s]) || 0;
+    var mn = num_(row[ci.mn]);
+    var total = w + s;
+    var status = (mn===null) ? '未設定' : (total<mn ? '不足' : (total===mn ? 'ギリギリ' : '十分'));
+    items.push({ id:String(row[ci.id]||'').trim(), name:name, cat:(String(row[ci.cat]||'').trim()||'未分類'),
+      w:w, s:s, total:total, min:mn, status:status,
+      ship:String(row[ci.ship]||'').trim(), eta:String(row[ci.eta]||'').trim(), exp:String(row[ci.exp]||'').trim() });
+  }
+  return items;
+}
+
+function doInc_(p){
+  if (p.token !== TOKEN) return { ok:false, error:'auth' };
+  var field = (p.field==='w') ? '倉庫数量' : ((p.field==='s') ? '店舗在庫' : null);
+  if (!field) return { ok:false, error:'field' };
+  var delta = Number(p.delta);
+  if (!(delta===1 || delta===-1)) return { ok:false, error:'delta' };
+  var lock = LockService.getScriptLock();
+  lock.waitLock(8000);
+  try {
+    var sh = sheet_();
+    var vals = sh.getDataRange().getValues();
+    var head = vals[0];
+    var idCol = head.indexOf('商品ID');
+    var fCol = head.indexOf(field);
+    for (var r=1; r<vals.length; r++){
+      if (String(vals[r][idCol]).trim() === String(p.id).trim()){
+        var cur = Number(String(vals[r][fCol]).replace(/,/g,'')) || 0;
+        var nv = cur + delta;
+        if (nv < 0) nv = 0;
+        sh.getRange(r+1, fCol+1).setValue(nv);
+        return { ok:true, id:p.id, field:p.field, value:nv };
+      }
+    }
+    return { ok:false, error:'notfound' };
+  } finally { lock.releaseLock(); }
+}
+
+function doGet(e){
+  var out;
+  try {
+    if (e.parameter.action === 'inc') out = doInc_(e.parameter);
+    else out = { ok:true, updated: Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy-MM-dd HH:mm'), items: readAll_() };
+  } catch(err){ out = { ok:false, error:String(err) }; }
+  var txt = JSON.stringify(out);
+  var cb = e.parameter.callback;
+  if (cb) return ContentService.createTextOutput(cb + '(' + txt + ')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+  return ContentService.createTextOutput(txt).setMimeType(ContentService.MimeType.JSON);
+}
