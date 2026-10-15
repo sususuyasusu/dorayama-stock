@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#D85A30">
 <title>どら山 在庫ダッシュボード</title>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="在庫">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
 <style>
   :root{
     --bg:#faf7f2; --card:#ffffff; --ink:#2a2420; --sub:#8a8178; --line:#e7e0d6;
@@ -72,7 +78,7 @@
   .fill{position:absolute;top:0;left:0;height:100%;border-radius:6px 0 0 6px}
   .fill.store{z-index:2}
   .fill.ware{z-index:1;background:repeating-linear-gradient(45deg,rgba(120,110,95,.22),rgba(120,110,95,.22) 5px,rgba(120,110,95,.11) 5px,rgba(120,110,95,.11) 10px)}
-  .fill.red{background:var(--coral)} .fill.green{background:var(--green)}
+  .fill.red{background:var(--coral)} .fill.green{background:var(--green)} .fill.amber{background:var(--amber)}
   .minmark{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);z-index:3}
   .minmark:after{content:"最低";position:absolute;top:-14px;left:50%;transform:translateX(-50%);
     font-size:9.5px;font-weight:800;color:var(--ink);white-space:nowrap}
@@ -131,29 +137,30 @@ var STATE = { cat:"すべて", group:null, q:"" };
 var DATA = null;
 
 function classify(it){
-  // returns {pri, kind, badge, badgeCls, sub, barCls, lead, groupKey}
+  // returns {pri, badge, badgeCls, sub, barCls, lead, groupKey}
   var s=it.s, w=it.w, mn=it.min, total=it.total, ship=it.ship;
-  var below = (mn!=null && s<mn);            // 店舗が最低を下回る
-  var shortTotal = (mn!=null && total<mn);   // 店舗+倉庫でも足りない
+  var hasW = (w>=0.5);                        // 倉庫に意味のある在庫がある
+  var belowShelf = (mn!=null && s<mn);        // 店舗が最低ラインを下回る
+  var shortTotal = (mn!=null && total<mn);    // 店舗+倉庫でも最低に届かない→買い足し要
+  var barCls = belowShelf ? "red" : "green";
   if(ship){
-    return {pri:3, badge:"到着待ち", badgeCls:"blue", sub:(it.eta?("お届け "+it.eta+"頃"):it.ship), lead:"lead-blue", barCls: below?"red":"green", groupKey:"到着待ち"};
+    return {pri:3, badge:"到着待ち", badgeCls:"blue", sub:(it.eta?("お届け "+it.eta+"頃"):it.ship), lead:"lead-blue", barCls:barCls, groupKey:"到着待ち"};
   }
-  if(shortTotal && w===0){
-    return {pri:0, badge:"発注を検討", badgeCls:"red", sub:"在庫 "+fmt(total)+(mn!=null?" / 最低 "+fmt(mn):""), lead:"lead-red", barCls:"red", groupKey:"今すぐ発注"};
-  }
-  if(shortTotal && w>0){
-    return {pri:1, badge:"発注を検討", badgeCls:"red", sub:"倉庫にも "+fmt(w), lead:"lead-red", barCls:"red", groupKey:"今すぐ発注"};
-  }
-  if(below && w>0){
-    return {pri:2, badge:"倉庫から補充", badgeCls:"amber", sub:"倉庫に "+fmt(w), lead:"lead-amber", barCls:"red", groupKey:"在庫わずか"};
+  if(shortTotal){
+    return {pri:0, badge:"発注を検討", badgeCls:"red",
+      sub:"在庫 "+fmt(total)+" / 最低 "+fmt(mn)+(hasW?"（倉庫に "+fmt(w)+"）":""),
+      lead:"lead-red", barCls:"red", groupKey:"今すぐ発注"};
   }
   if(mn!=null && total===mn){
-    return {pri:4, badge:"在庫わずか", badgeCls:"amber", sub:"最低ラインぴったり", lead:"lead-amber", barCls:"green", groupKey:"在庫わずか"};
+    return {pri:4, badge:"在庫わずか", badgeCls:"amber", sub:"最低ラインぴったり", lead:"lead-amber", barCls:"amber", groupKey:"在庫わずか"};
+  }
+  if(belowShelf && hasW){
+    return {pri:5, badge:"倉庫から補充", badgeCls:"amber", sub:"倉庫に "+fmt(w)+" あり", lead:"lead-amber", barCls:"red", groupKey:"十分"};
   }
   if(mn==null){
-    return {pri:6, badge:"目安なし", badgeCls:"green", sub:"最低在庫 未設定", lead:"lead-green", barCls:"green", groupKey:"十分"};
+    return {pri:7, badge:"目安なし", badgeCls:"green", sub:"最低在庫 未設定", lead:"lead-green", barCls:"green", groupKey:"十分"};
   }
-  return {pri:5, badge:"在庫OK", badgeCls:"green", sub:"", lead:"lead-green", barCls:"green", groupKey:"十分"};
+  return {pri:6, badge:"在庫OK", badgeCls:"green", sub:"", lead:"lead-green", barCls:"green", groupKey:"十分"};
 }
 
 function expInfo(it){
