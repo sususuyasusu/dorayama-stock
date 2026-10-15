@@ -23,21 +23,20 @@
   html,body{margin:0}
   body{background:var(--bg);color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
-    -webkit-font-smoothing:antialiased;line-height:1.5;padding:0 16px 48px;}
+    -webkit-font-smoothing:antialiased;line-height:1.5;padding:0 16px 56px;-webkit-text-size-adjust:100%;}
   .wrap{max-width:860px;margin:0 auto}
-  header.top{padding:18px 2px 10px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  header.top{padding:16px 2px 8px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
   .ttl{font-size:20px;font-weight:800;letter-spacing:.02em;display:flex;align-items:center;gap:9px}
   .ttl .dot{width:11px;height:11px;border-radius:50%;background:var(--coral);box-shadow:0 0 0 4px #fbe4d8}
   .updated{font-size:12px;color:var(--sub)}
   .updated b{color:var(--ink);font-weight:700}
 
-  /* hero cards */
-  .hero{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:6px 0 14px}
+  .hero{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:6px 0 12px}
   .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 10px 11px;
-    box-shadow:var(--shadow);cursor:pointer;text-align:left;position:relative;transition:transform .08s,border-color .12s;-webkit-tap-highlight-color:transparent}
+    box-shadow:var(--shadow);cursor:pointer;text-align:left;transition:transform .08s,border-color .12s;-webkit-tap-highlight-color:transparent}
   .kpi:active{transform:scale(.98)}
   .kpi.on{border-color:var(--ink)}
-  .kpi .n{font-size:28px;font-weight:800;line-height:1;letter-spacing:-.02em}
+  .kpi .n{font-size:27px;font-weight:800;line-height:1;letter-spacing:-.02em}
   .kpi .lb{font-size:12px;font-weight:700;margin-top:6px;color:var(--sub)}
   .kpi .bar{height:4px;border-radius:3px;margin-top:9px;opacity:.9}
   .kpi.c-red .n{color:var(--red)} .kpi.c-red .bar{background:var(--red)}
@@ -45,8 +44,12 @@
   .kpi.c-amber .n{color:var(--amber)} .kpi.c-amber .bar{background:var(--amber)}
   .kpi.c-green .n{color:var(--green)} .kpi.c-green .bar{background:var(--green)}
 
-  /* controls */
-  .controls{display:flex;gap:8px;align-items:center;margin:4px 0 12px;flex-wrap:wrap}
+  .tabs{display:flex;gap:6px;margin:2px 0 10px}
+  .tab{flex:1;border:1px solid var(--line);background:var(--card);color:var(--sub);font-size:13.5px;font-weight:800;
+    padding:9px 10px;border-radius:11px;cursor:pointer;text-align:center;-webkit-tap-highlight-color:transparent}
+  .tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  .controls{display:flex;gap:8px;align-items:center;margin:0 0 12px;flex-wrap:wrap}
   .chips{display:flex;gap:7px;flex-wrap:wrap}
   .chip{border:1px solid var(--line);background:var(--card);color:var(--sub);font-size:13px;font-weight:700;
     padding:7px 13px;border-radius:999px;cursor:pointer;-webkit-tap-highlight-color:transparent}
@@ -56,53 +59,73 @@
     padding:8px 14px;font-size:14px;color:var(--ink);outline:none}
   .search input::placeholder{color:var(--sub)}
 
-  /* rows */
   .list{display:flex;flex-direction:column;gap:9px}
   .grp{font-size:12px;font-weight:800;color:var(--sub);margin:12px 2px 2px;letter-spacing:.04em;display:flex;align-items:center;gap:7px}
   .grp .ln{flex:1;height:1px;background:var(--line)}
+  .grp .cnt{color:var(--ink);font-weight:800}
   .row{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
-    padding:12px 14px;display:grid;grid-template-columns:1fr auto;gap:4px 14px;align-items:center}
+    padding:11px 13px;display:grid;grid-template-columns:auto 1fr auto;gap:3px 11px;align-items:center}
   .row.lead-red{border-left:4px solid var(--red)}
   .row.lead-amber{border-left:4px solid var(--amber)}
   .row.lead-blue{border-left:4px solid var(--blue)}
   .row.lead-green{border-left:4px solid var(--green)}
-  .name{font-size:15px;font-weight:700;letter-spacing:.01em}
-  .meta{font-size:11.5px;color:var(--sub);margin-top:1px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .thumb{grid-row:1 / span 2;width:46px;height:46px;border-radius:10px;object-fit:cover;background:var(--gray-bg);border:1px solid var(--line)}
+  .thumb.ph{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--sub)}
+  .name{font-size:15px;font-weight:700;letter-spacing:.01em;min-width:0}
+  .meta{font-size:11.5px;color:var(--sub);margin-top:1px;display:flex;gap:7px;flex-wrap:wrap;align-items:center}
   .tag{background:var(--gray-bg);color:var(--sub);border-radius:6px;padding:1px 7px;font-weight:700;font-size:11px}
   .exp{border-radius:6px;padding:1px 7px;font-weight:700;font-size:11px}
   .exp.warn{background:var(--coral-bg);color:var(--coral)}
   .exp.soon{background:var(--amber-bg);color:var(--amber)}
-
-  .barwrap{grid-column:1 / -1;margin-top:9px}
-  .track{position:relative;height:22px;background:var(--track);border:1px solid var(--track-br);border-radius:7px;overflow:hidden}
-  .fill{position:absolute;top:0;left:0;height:100%;border-radius:6px 0 0 6px}
-  .fill.store{z-index:2}
-  .fill.ware{z-index:1;background:repeating-linear-gradient(45deg,rgba(120,110,95,.22),rgba(120,110,95,.22) 5px,rgba(120,110,95,.11) 5px,rgba(120,110,95,.11) 10px)}
-  .fill.red{background:var(--coral)} .fill.green{background:var(--green)} .fill.amber{background:var(--amber)}
-  .minmark{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);z-index:3}
-  .minmark:after{content:"最低";position:absolute;top:-14px;left:50%;transform:translateX(-50%);
-    font-size:9.5px;font-weight:800;color:var(--ink);white-space:nowrap}
-  .barnums{display:flex;gap:12px;margin-top:5px;font-size:11.5px;color:var(--sub)}
-  .barnums b{color:var(--ink);font-weight:800}
-
-  .note{justify-self:end;text-align:right;min-width:104px}
-  .badge{display:inline-block;font-size:12.5px;font-weight:800;padding:5px 11px;border-radius:999px;white-space:nowrap}
+  .note{justify-self:end;text-align:right;min-width:92px}
+  .badge{display:inline-block;font-size:12px;font-weight:800;padding:5px 10px;border-radius:999px;white-space:nowrap}
   .badge.red{background:var(--coral-bg);color:var(--red)}
   .badge.amber{background:var(--amber-bg);color:var(--amber)}
   .badge.blue{background:var(--blue-bg);color:var(--blue)}
   .badge.green{background:var(--green-bg);color:var(--green)}
   .nsub{font-size:11px;color:var(--sub);margin-top:3px}
 
-  footer{margin-top:22px;text-align:center;color:var(--sub);font-size:12px;line-height:1.7}
+  .barwrap{grid-column:2 / -1;margin-top:8px}
+  .track{position:relative;height:20px;background:var(--track);border:1px solid var(--track-br);border-radius:7px;overflow:hidden}
+  .fill{position:absolute;top:0;left:0;height:100%;border-radius:6px 0 0 6px}
+  .fill.store{z-index:2}
+  .fill.ware{z-index:1;background:repeating-linear-gradient(45deg,rgba(120,110,95,.22),rgba(120,110,95,.22) 5px,rgba(120,110,95,.11) 5px,rgba(120,110,95,.11) 10px)}
+  .fill.red{background:var(--coral)} .fill.green{background:var(--green)} .fill.amber{background:var(--amber)}
+  .minmark{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);z-index:3}
+  .minmark:after{content:"最低";position:absolute;top:-13px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:800;color:var(--ink);white-space:nowrap}
+
+  .edit{grid-column:1 / -1;margin-top:9px;display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+  .stepper{display:flex;align-items:center;gap:8px}
+  .stepper .lbl{font-size:11.5px;color:var(--sub);font-weight:700;min-width:30px}
+  .stepper .val{font-size:15px;font-weight:800;min-width:30px;text-align:center;font-variant-numeric:tabular-nums}
+  .stepper .val.min{color:var(--sub);font-weight:700}
+  .btn{width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--card);
+    font-size:19px;font-weight:700;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;
+    -webkit-tap-highlight-color:transparent;user-select:none;line-height:1;box-shadow:var(--shadow)}
+  .btn:active{transform:scale(.92);background:var(--gray-bg)}
+  .btn.busy{opacity:.5;pointer-events:none}
+  .minlbl{font-size:11.5px;color:var(--sub);font-weight:700}
+  .minlbl b{color:var(--ink);font-weight:800}
+
+  footer{margin-top:20px;text-align:center;color:var(--sub);font-size:12px;line-height:1.7}
   footer a{color:var(--coral);text-decoration:none;font-weight:700}
-  .applink{display:inline-block;margin-top:8px;background:var(--card);border:1px solid var(--line);
-    border-radius:999px;padding:9px 18px;box-shadow:var(--shadow);color:var(--ink);font-weight:700;font-size:13px;text-decoration:none}
   .empty{text-align:center;color:var(--sub);padding:40px 0;font-size:14px}
+
+  .banner{background:var(--amber-bg);color:#8a5a00;border:1px solid #f0d9a0;border-radius:11px;
+    padding:9px 13px;font-size:12.5px;font-weight:700;margin:0 0 12px;display:none}
+  .banner.show{display:block}
+
+  #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:#fff;padding:11px 18px;border-radius:999px;font-size:13px;font-weight:700;
+    box-shadow:0 6px 20px rgba(0,0,0,.25);opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:50;max-width:88%;text-align:center}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
   @media (max-width:560px){
     .hero{grid-template-columns:repeat(2,1fr)}
     .kpi .n{font-size:24px}
-    .row{grid-template-columns:1fr;gap:3px}
-    .note{justify-self:start;text-align:left;margin-top:7px}
+    .row{grid-template-columns:auto 1fr;gap:3px 10px}
+    .note{grid-column:2;justify-self:start;text-align:left;margin-top:5px}
+    .barwrap{grid-column:1 / -1}
     .search{margin-left:0;max-width:none}
   }
 </style>
@@ -116,6 +139,13 @@
 
   <div class="hero" id="hero"></div>
 
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-v="urgency">緊急度順（バー）</button>
+    <button class="tab" data-v="category">商品一覧（カテゴリー順）</button>
+  </div>
+
+  <div class="banner" id="banner">＋/− での在庫の変更は、いまは準備中です（Macで1回の承認後に保存できるようになります）。</div>
+
   <div class="controls">
     <div class="chips" id="chips"></div>
     <div class="search"><input id="q" type="search" placeholder="品名でさがす" autocomplete="off"></div>
@@ -124,123 +154,90 @@
   <div class="list" id="list"></div>
 
   <footer>
-    数字は <b>店舗在庫</b> と <b>最低ライン</b>、斜線は倉庫の予備在庫。到着待ちは発送メールから自動反映。<br>
-    <a class="applink" id="applink" href="#">在庫アプリで編集・棚卸する</a>
+    数字は <b>店舗在庫</b> と <b>最低ライン</b>、斜線は倉庫の予備。＋/−でその場で在庫を調整。到着待ちは発送メールから自動反映。
   </footer>
 </div>
+<div id="toast"></div>
 
 <script>
-var APP_URL = "https://www.appsheet.com/start/c1321275-432b-435c-a679-4406e892d7a6";
-document.getElementById('applink').href = APP_URL;
+var TOKEN = "dorayama-zaiko-2026";
+var STATE = { cat:"すべて", group:null, q:"", view:"urgency" };
+var DATA = null, GAS_URL = "";
 
-var STATE = { cat:"すべて", group:null, q:"" };
-var DATA = null;
+function fmt(n){ if(n==null) return "—"; n=Math.round(n*10)/10; return (""+n).replace(/\B(?=(\d{3})+(?!\d))/g,","); }
+function toast(msg){ var t=document.getElementById('toast'); t.textContent=msg; t.className='show';
+  clearTimeout(window._tt); window._tt=setTimeout(function(){ t.className=''; }, 2600); }
 
 function classify(it){
-  // returns {pri, badge, badgeCls, sub, barCls, lead, groupKey}
   var s=it.s, w=it.w, mn=it.min, total=it.total, ship=it.ship;
-  var hasW = (w>=0.5);                        // 倉庫に意味のある在庫がある
-  var belowShelf = (mn!=null && s<mn);        // 店舗が最低ラインを下回る
-  var shortTotal = (mn!=null && total<mn);    // 店舗+倉庫でも最低に届かない→買い足し要
+  var hasW=(w>=0.5), belowShelf=(mn!=null&&s<mn), shortTotal=(mn!=null&&total<mn);
   var barCls = belowShelf ? "red" : "green";
-  if(ship){
-    return {pri:3, badge:"到着待ち", badgeCls:"blue", sub:(it.eta?("お届け "+it.eta+"頃"):it.ship), lead:"lead-blue", barCls:barCls, groupKey:"到着待ち"};
-  }
-  if(shortTotal){
-    return {pri:0, badge:"発注を検討", badgeCls:"red",
-      sub:"在庫 "+fmt(total)+" / 最低 "+fmt(mn)+(hasW?"（倉庫に "+fmt(w)+"）":""),
-      lead:"lead-red", barCls:"red", groupKey:"今すぐ発注"};
-  }
-  if(mn!=null && total===mn){
-    return {pri:4, badge:"在庫わずか", badgeCls:"amber", sub:"最低ラインぴったり", lead:"lead-amber", barCls:"amber", groupKey:"在庫わずか"};
-  }
-  if(belowShelf && hasW){
-    return {pri:5, badge:"倉庫から補充", badgeCls:"amber", sub:"倉庫に "+fmt(w)+" あり", lead:"lead-amber", barCls:"red", groupKey:"十分"};
-  }
-  if(mn==null){
-    return {pri:7, badge:"目安なし", badgeCls:"green", sub:"最低在庫 未設定", lead:"lead-green", barCls:"green", groupKey:"十分"};
-  }
-  return {pri:6, badge:"在庫OK", badgeCls:"green", sub:"", lead:"lead-green", barCls:"green", groupKey:"十分"};
+  if(ship) return {pri:3,badge:"到着待ち",badgeCls:"blue",sub:(it.eta?("お届け "+it.eta+"頃"):it.ship),lead:"lead-blue",barCls:barCls,gk:"到着待ち"};
+  if(shortTotal) return {pri:0,badge:"発注を検討",badgeCls:"red",sub:"在庫 "+fmt(total)+" / 最低 "+fmt(mn)+(hasW?"（倉庫に "+fmt(w)+"）":""),lead:"lead-red",barCls:"red",gk:"今すぐ発注"};
+  if(mn!=null&&total===mn) return {pri:4,badge:"在庫わずか",badgeCls:"amber",sub:"最低ラインぴったり",lead:"lead-amber",barCls:"amber",gk:"在庫わずか"};
+  if(belowShelf&&hasW) return {pri:5,badge:"倉庫から補充",badgeCls:"amber",sub:"倉庫に "+fmt(w)+" あり",lead:"lead-amber",barCls:"red",gk:"十分"};
+  if(mn==null) return {pri:7,badge:"目安なし",badgeCls:"green",sub:"最低在庫 未設定",lead:"lead-green",barCls:"green",gk:"十分"};
+  return {pri:6,badge:"在庫OK",badgeCls:"green",sub:"",lead:"lead-green",barCls:"green",gk:"十分"};
 }
-
 function expInfo(it){
-  if(!it.exp) return null;
-  var d=parseDate(it.exp); if(!d) return null;
-  var today=new Date(); today.setHours(0,0,0,0);
-  var diff=Math.round((d-today)/86400000);
-  if(diff<0) return {cls:"warn", txt:"期限切れ "+md(d)};
-  if(diff<=7) return {cls:"soon", txt:"期限 "+md(d)};
-  return null;
+  if(!it.exp) return null; var d=parseDate(it.exp); if(!d) return null;
+  var today=new Date(); today.setHours(0,0,0,0); var diff=Math.round((d-today)/86400000);
+  if(diff<0) return {cls:"warn",txt:"期限切れ "+md(d)}; if(diff<=7) return {cls:"soon",txt:"期限 "+md(d)}; return null;
 }
-function parseDate(s){
-  s=(""+s).trim(); if(!s) return null;
-  var m=s.match(/(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})/);
-  if(m) return new Date(+m[1],+m[2]-1,+m[3]);
-  m=s.match(/(\d{1,2})[\/\-](\d{1,2})/);
-  if(m){var y=new Date().getFullYear();return new Date(y,+m[1]-1,+m[2]);}
-  return null;
-}
+function parseDate(s){ s=(""+s).trim(); if(!s) return null;
+  var m=s.match(/(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})/); if(m) return new Date(+m[1],+m[2]-1,+m[3]);
+  m=s.match(/(\d{1,2})[\/\-](\d{1,2})/); if(m){var y=new Date().getFullYear();return new Date(y,+m[1]-1,+m[2]);} return null; }
 function md(d){return (d.getMonth()+1)+"/"+d.getDate();}
-function fmt(n){ if(n==null) return "—"; n=Math.round(n*10)/10; return (""+n).replace(/\B(?=(\d{3})+(?!\d))/g,","); }
 
-var HERO = [
-  {key:"今すぐ発注", cls:"c-red",   lb:"今すぐ発注"},
-  {key:"到着待ち",   cls:"c-blue",  lb:"到着待ち"},
-  {key:"在庫わずか", cls:"c-amber", lb:"在庫わずか"},
-  {key:"十分",       cls:"c-green", lb:"十分"}
-];
+var HERO=[{key:"今すぐ発注",cls:"c-red"},{key:"到着待ち",cls:"c-blue"},{key:"在庫わずか",cls:"c-amber"},{key:"十分",cls:"c-green"}];
 
 function render(){
-  var items = DATA.items.map(function(it){ var c=classify(it); return {it:it,c:c}; });
-
-  // hero counts
+  var items = DATA.items.map(function(it){ return {it:it,c:classify(it)}; });
   var counts={}; HERO.forEach(function(h){counts[h.key]=0;});
-  items.forEach(function(x){ counts[x.c.groupKey]=(counts[x.c.groupKey]||0)+1; });
+  items.forEach(function(x){ counts[x.c.gk]=(counts[x.c.gk]||0)+1; });
+
   var hero=document.getElementById('hero'); hero.innerHTML="";
   HERO.forEach(function(h){
     var el=document.createElement('button');
     el.className="kpi "+h.cls+(STATE.group===h.key?" on":"");
-    el.innerHTML='<div class="n">'+(counts[h.key]||0)+'</div><div class="lb">'+h.lb+'</div><div class="bar"></div>';
+    el.innerHTML='<div class="n">'+(counts[h.key]||0)+'</div><div class="lb">'+h.key+'</div><div class="bar"></div>';
     el.onclick=function(){ STATE.group=(STATE.group===h.key?null:h.key); render(); };
     hero.appendChild(el);
   });
 
-  // category chips
+  var tabs=document.getElementById('tabs').children;
+  for(var i=0;i<tabs.length;i++){ tabs[i].className="tab"+(tabs[i].getAttribute('data-v')===STATE.view?" on":""); }
+
   var cats=["すべて"]; DATA.items.forEach(function(it){ if(cats.indexOf(it.cat)<0) cats.push(it.cat); });
   var chips=document.getElementById('chips'); chips.innerHTML="";
-  cats.forEach(function(c){
-    var el=document.createElement('button');
-    el.className="chip"+(STATE.cat===c?" on":"");
-    el.textContent=c;
-    el.onclick=function(){ STATE.cat=c; render(); };
-    chips.appendChild(el);
-  });
+  cats.forEach(function(c){ var el=document.createElement('button');
+    el.className="chip"+(STATE.cat===c?" on":""); el.textContent=c;
+    el.onclick=function(){ STATE.cat=c; render(); }; chips.appendChild(el); });
 
-  // filter
   var q=STATE.q.trim();
   var rows=items.filter(function(x){
     if(STATE.cat!=="すべて" && x.it.cat!==STATE.cat) return false;
-    if(STATE.group && x.c.groupKey!==STATE.group) return false;
+    if(STATE.group && x.c.gk!==STATE.group) return false;
     if(q && x.it.name.indexOf(q)<0) return false;
     return true;
   });
-  // sort by urgency then by shortfall
-  rows.sort(function(a,b){
-    if(a.c.pri!==b.c.pri) return a.c.pri-b.c.pri;
-    var sa=(a.it.min!=null? a.it.s-a.it.min : 999);
-    var sb=(b.it.min!=null? b.it.s-b.it.min : 999);
-    return sa-sb;
-  });
+
+  if(STATE.view==="category"){
+    rows.sort(function(a,b){ if(a.it.cat!==b.it.cat) return a.it.cat<b.it.cat?-1:1; return a.it.name<b.it.name?-1:1; });
+  } else {
+    rows.sort(function(a,b){ if(a.c.pri!==b.c.pri) return a.c.pri-b.c.pri;
+      var sa=(a.it.min!=null?a.it.s-a.it.min:999), sb=(b.it.min!=null?b.it.s-b.it.min:999); return sa-sb; });
+  }
 
   var list=document.getElementById('list'); list.innerHTML="";
   if(!rows.length){ list.innerHTML='<div class="empty">該当する品目はありません</div>'; return; }
-
   var lastGrp=null;
   rows.forEach(function(x){
-    if(x.c.groupKey!==lastGrp){
-      lastGrp=x.c.groupKey;
+    var gk = (STATE.view==="category") ? x.it.cat : x.c.gk;
+    if(gk!==lastGrp){ lastGrp=gk;
+      var cnt=rows.filter(function(y){ return ((STATE.view==="category")?y.it.cat:y.c.gk)===gk; }).length;
       var g=document.createElement('div'); g.className="grp";
-      g.innerHTML='<span>'+lastGrp+'</span><span class="ln"></span>';
+      g.innerHTML='<span>'+gk+'</span><span class="cnt">'+cnt+'</span><span class="ln"></span>';
       list.appendChild(g);
     }
     list.appendChild(rowEl(x.it,x.c));
@@ -250,43 +247,108 @@ function render(){
 function rowEl(it,c){
   var s=it.s, w=it.w, mn=it.min;
   var scale=Math.max(mn||0, s+w, 1)*1.12;
-  var storeW=Math.max(0, Math.min(100, s/scale*100));
-  var wareW=Math.max(0, Math.min(100-storeW, w/scale*100));
-  var minPct=(mn!=null)? Math.max(0, Math.min(100, mn/scale*100)) : null;
+  var storeW=Math.max(0,Math.min(100, s/scale*100));
+  var wareW=Math.max(0,Math.min(100-storeW, w/scale*100));
+  var minPct=(mn!=null)?Math.max(0,Math.min(100, mn/scale*100)):null;
 
-  var row=document.createElement('div'); row.className="row "+c.lead;
-
+  var row=document.createElement('div'); row.className="row "+c.lead; row.setAttribute('data-id', it.id);
   var ex=expInfo(it);
-  var metaHtml='<span class="tag">'+it.cat+'</span>';
-  if(ex) metaHtml+='<span class="exp '+ex.cls+'">'+ex.txt+'</span>';
-
-  var minMarkHtml = (minPct!=null)? '<div class="minmark" style="left:'+minPct+'%"></div>' : '';
-  var nsub = c.sub? '<div class="nsub">'+c.sub+'</div>' : '';
+  var thumb = it.img ? '<img class="thumb" src="'+it.img+'" loading="lazy" onerror="this.style.display=\'none\'">'
+                     : '<div class="thumb ph">'+(it.cat||"").slice(0,2)+'</div>';
+  var metaHtml='<span class="tag">'+it.cat+'</span>'+(ex?'<span class="exp '+ex.cls+'">'+ex.txt+'</span>':'');
+  var minMark=(minPct!=null)?'<div class="minmark" style="left:'+minPct+'%"></div>':'';
+  var nsub=c.sub?'<div class="nsub">'+c.sub+'</div>':'';
 
   row.innerHTML=
-    '<div><div class="name">'+it.name+'</div><div class="meta">'+metaHtml+'</div></div>'+
+    thumb+
+    '<div style="min-width:0"><div class="name">'+it.name+'</div><div class="meta">'+metaHtml+'</div></div>'+
     '<div class="note"><span class="badge '+c.badgeCls+'">'+c.badge+'</span>'+nsub+'</div>'+
-    '<div class="barwrap">'+
-      '<div class="track">'+
-        '<div class="fill store '+c.barCls+'" style="width:'+storeW+'%"></div>'+
-        '<div class="fill ware" style="left:'+storeW+'%;width:'+wareW+'%"></div>'+
-        minMarkHtml+
-      '</div>'+
-      '<div class="barnums"><span>店舗 <b>'+fmt(s)+'</b></span>'+
-        (w>0?'<span>倉庫 <b>'+fmt(w)+'</b></span>':'')+
-        (mn!=null?'<span>最低 <b>'+fmt(mn)+'</b></span>':'<span>最低 未設定</span>')+'</div>'+
+    '<div class="barwrap"><div class="track">'+
+      '<div class="fill store '+c.barCls+'" style="width:'+storeW+'%"></div>'+
+      '<div class="fill ware" style="left:'+storeW+'%;width:'+wareW+'%"></div>'+minMark+
+    '</div></div>'+
+    '<div class="edit">'+
+      stepperHtml(it.id,"w","倉庫",w)+
+      stepperHtml(it.id,"s","店舗",s)+
+      '<span class="minlbl">最低 <b>'+(mn!=null?fmt(mn):"—")+'</b></span>'+
     '</div>';
   return row;
 }
+function stepperHtml(id,field,label,val){
+  return '<div class="stepper"><span class="lbl">'+label+'</span>'+
+    '<button class="btn" onclick="chg(\''+id+'\',\''+field+'\',-1,this)">−</button>'+
+    '<span class="val" data-v="'+field+'">'+fmt(val)+'</span>'+
+    '<button class="btn" onclick="chg(\''+id+'\',\''+field+'\',1,this)">＋</button></div>';
+}
+
+function itemById(id){ for(var i=0;i<DATA.items.length;i++){ if(String(DATA.items[i].id)===String(id)) return DATA.items[i]; } return null; }
+
+function chg(id, field, delta, btn){
+  var it=itemById(id); if(!it) return;
+  if(!GAS_URL){ toast("保存はMacで1回承認後に有効になります"); return; }
+  var cur=(field==="w")?it.w:it.s;
+  var nv=Math.max(0, (cur||0)+delta);
+  // 楽観更新
+  if(field==="w") it.w=nv; else it.s=nv; it.total=it.w+it.s;
+  render();
+  // 送信
+  var grp=btn.parentNode; var btns=grp.querySelectorAll('.btn');
+  gasInc(id, field, delta, function(resp){
+    if(resp && resp.ok){
+      var real=Number(resp.value);
+      if(field==="w") it.w=real; else it.s=real; it.total=it.w+it.s;
+      render();
+    } else {
+      // 失敗 → 元に戻す
+      if(field==="w") it.w=cur; else it.s=cur; it.total=it.w+it.s; render();
+      toast(resp&&resp.error==="auth" ? "保存の承認がまだです（Macで1回）" : "保存できませんでした。通信をご確認ください");
+    }
+  });
+}
+
+function gasInc(id, field, delta, cb){
+  var name="jp"+(window._jc=(window._jc||0)+1);
+  var done=false, s=document.createElement('script');
+  window[name]=function(resp){ done=true; cleanup(); cb(resp); };
+  function cleanup(){ try{delete window[name];}catch(e){window[name]=undefined;} if(s.parentNode) s.parentNode.removeChild(s); }
+  s.onerror=function(){ if(!done){ cleanup(); cb({ok:false,error:"neterr"}); } };
+  s.src=GAS_URL+"?action=inc&id="+encodeURIComponent(id)+"&field="+field+"&delta="+delta+"&token="+encodeURIComponent(TOKEN)+"&callback="+name;
+  document.body.appendChild(s);
+  setTimeout(function(){ if(!done){ cleanup(); cb({ok:false,error:"timeout"}); } }, 10000);
+}
+
+function gasLoad(cb){
+  if(!GAS_URL){ cb(null); return; }
+  var name="jl"+(window._jl=(window._jl||0)+1);
+  var done=false, s=document.createElement('script');
+  window[name]=function(resp){ done=true; cleanup(); cb(resp&&resp.ok?resp:null); };
+  function cleanup(){ try{delete window[name];}catch(e){window[name]=undefined;} if(s.parentNode) s.parentNode.removeChild(s); }
+  s.onerror=function(){ if(!done){ cleanup(); cb(null); } };
+  s.src=GAS_URL+"?callback="+name+"&t="+Date.now();
+  document.body.appendChild(s);
+  setTimeout(function(){ if(!done){ cleanup(); cb(null); } }, 10000);
+}
+
+function applyData(d){ DATA=d; document.getElementById('upd').textContent=d.updated||""; render(); }
 
 function boot(){
   document.getElementById('q').addEventListener('input',function(e){STATE.q=e.target.value;render();});
-  fetch('data.json?t='+Date.now()).then(function(r){return r.json();}).then(function(d){
-    DATA=d;
-    document.getElementById('upd').textContent=d.updated||"";
-    render();
-  }).catch(function(e){
-    document.getElementById('list').innerHTML='<div class="empty">データを読み込めませんでした。<br>時間をおいて再読み込みしてください。</div>';
+  var tabs=document.getElementById('tabs').children;
+  for(var i=0;i<tabs.length;i++){ (function(t){ t.onclick=function(){ STATE.view=t.getAttribute('data-v'); render(); }; })(tabs[i]); }
+
+  // 1) 受け口URL（あれば保存が有効）
+  fetch('gas_url.txt?t='+Date.now()).then(function(r){return r.ok?r.text():"";}).then(function(t){
+    GAS_URL=(t||"").trim();
+    document.getElementById('banner').className = GAS_URL ? "banner" : "banner show";
+  }).catch(function(){}).finally(function(){
+    // 2) まずスナップショットで即表示
+    fetch('data.json?t='+Date.now()).then(function(r){return r.json();}).then(function(d){
+      applyData(d);
+      // 3) 受け口があれば最新を取り直し
+      if(GAS_URL){ gasLoad(function(live){ if(live && live.items && live.items.length) applyData(live); }); }
+    }).catch(function(){
+      document.getElementById('list').innerHTML='<div class="empty">データを読み込めませんでした。<br>時間をおいて再読み込みしてください。</div>';
+    });
   });
 }
 boot();
