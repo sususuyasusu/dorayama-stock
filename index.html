@@ -253,8 +253,7 @@ function rowEl(it,c){
 
   var row=document.createElement('div'); row.className="row "+c.lead; row.setAttribute('data-id', it.id);
   var ex=expInfo(it);
-  var thumb = it.img ? '<img class="thumb" src="'+it.img+'" loading="lazy" onerror="this.style.display=\'none\'">'
-                     : '<div class="thumb ph">'+(it.cat||"").slice(0,2)+'</div>';
+  var thumb = '<div class="thumb ph">'+(it.cat||"").slice(0,2)+'</div>';
   var metaHtml='<span class="tag">'+it.cat+'</span>'+(ex?'<span class="exp '+ex.cls+'">'+ex.txt+'</span>':'');
   var minMark=(minPct!=null)?'<div class="minmark" style="left:'+minPct+'%"></div>':'';
   var nsub=c.sub?'<div class="nsub">'+c.sub+'</div>':'';
