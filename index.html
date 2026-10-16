@@ -242,7 +242,6 @@
   <button class="navbtn" data-tab="毎日"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="16" rx="2.7"/><path d="M7.6 2.9v3.2M16.4 2.9v3.2M3.5 9.2h17"/><path d="m8.3 15 2.7 2.5 4.8-5"/></svg></span>毎日チェック</button>
   <button class="navbtn" data-tab="商品"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2.7 8.2 4.5v9.4L12 21.2l-8.2-4.6V7.2L12 2.7Z"/><path d="m3.8 7.2 8.2 4.6 8.2-4.6M12 11.8v9.4M8 4.9l8.3 4.5v3.3"/></svg></span>商品一覧</button>
   <button class="navbtn" data-tab="発注先"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 9.4 12 4l8.5 5.4v10.8h-17V9.4Z"/><path d="M3.5 9.5h17M8 20.2v-6.8h8v6.8M8 16.9h8"/><path d="M7 11.5h.01M12 11.5h.01M17 11.5h.01" stroke-width="2.8"/></svg></span>発注先別</button>
-  <button class="navbtn" data-tab="棚卸"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4.5" width="14" height="16.7" rx="2.2"/><rect x="9.1" y="2.8" width="5.8" height="3.4" rx="1.1" fill="var(--card)"/><path d="m8.2 11.5 1.1 1.1 1.8-2M13.5 11.7h2.6M8.2 16.4l1.1 1.1 1.8-2M13.5 16.6h2.6"/></svg></span>棚卸</button>
 </nav>
 
 <div class="modal" id="detail"><div class="sheet" id="detailBody"></div></div>
@@ -306,7 +305,7 @@ function render(){
 
   // コントロールの出し分け
   var showHero=(tab==="要発注");
-  var showChips=(tab==="商品"||tab==="棚卸");
+  var showChips=(tab==="商品");
   var showSup=(tab==="要発注"||tab==="商品");
   var showControls=true;
   var showSearch=true;
@@ -370,7 +369,7 @@ function render(){
     rows.sort(function(a,b){ var ga=(a.c.gk==="到着待ち")?1:0, gb=(b.c.gk==="到着待ち")?1:0; if(ga!==gb)return ga-gb; return a.c.pri-b.c.pri; }); }
   else if(tab==="発注先"){ groupKey=function(x){ return x.it.sup||"未設定"; };
     rows.sort(function(a,b){ var sa=a.it.sup||"", sb=b.it.sup||""; if(sa!==sb)return sa<sb?-1:1; return a.c.pri-b.c.pri; }); }
-  else if(tab==="商品"||tab==="棚卸"){ groupKey=function(x){ return x.it.cat; };   // カテゴリー順
+  else if(tab==="商品"){ groupKey=function(x){ return x.it.cat; };   // カテゴリー順
     rows.sort(function(a,b){ if(a.it.cat!==b.it.cat)return a.it.cat<b.it.cat?-1:1; return a.it.name<b.it.name?-1:1; }); }
 
   list.innerHTML="";
@@ -385,7 +384,7 @@ function render(){
         list.appendChild(g);
       }
     }
-    list.appendChild(tab==="棚卸" ? stkRowEl(x.it) : rowEl(x.it,x.c));
+    list.appendChild(rowEl(x.it,x.c));
   });
 }
 
@@ -631,12 +630,10 @@ function renderDetail(id){
     +edTextRow(it.id,"ship","配送状況",it.ship,"")
     +edTextRow(it.id,"eta","お届け予定",it.eta,"例 2026-11-30")
     +edTextRow(it.id,"shipmemo","配送メモ",it.shipmemo,"")
-    +edRow(it.id,"stk","棚卸数",it.stk)
     +edTextRow(it.id,"exp","賞味期限",it.exp,"例 2026-11-30")
     +edTextRow(it.id,"batch","ロット",it.batch,"")
     +frow("在庫表示", esc(zaiko))
     +frow("発注ステータス", '<span class="badge '+c.badgeCls+'">'+c.badge+'</span> '+esc(ostatus))
-    +frow("棚卸差異", diffBadge(it))
     +frow("期限ステータス", (ex?'<span class="exp '+(ex.cls||"")+'">'+ex.txt+'</span>':'—'))
     +'<div class="acts">'+orderBtn+'</div>'
     +histHtml(it)
