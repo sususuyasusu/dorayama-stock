@@ -424,6 +424,7 @@ function rowEl(it,c){
   return row;
 }
 function obtnHtml(it){
+  if(STATE.tab!=="要発注") return "";   // 発注先/発注サイトは要発注リストのみ
   var lbl = isUrl(it.ref) ? "📤 発注サイト" : "🏢 発注先";
   return '<button class="obtn" onclick="openSupplier(\''+it.id+'\')">'+lbl+'</button>';
 }
