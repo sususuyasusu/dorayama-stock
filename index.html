@@ -162,7 +162,9 @@
   .frow .v a{color:var(--coral);text-decoration:none;font-weight:800}
   .ed{display:flex;align-items:center;gap:7px}
   .ed input{width:70px;text-align:center;border:1px solid var(--line);background:var(--card);border-radius:9px;padding:7px;font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink)}
-  .ed input.txt{width:130px;text-align:left;font-weight:600}
+  .ed input.txt{width:150px;text-align:left;font-weight:600}
+  .selr{border:1px solid var(--line);background:var(--card);border-radius:9px;padding:8px 10px;font-size:14px;font-weight:700;color:var(--ink);outline:none;max-width:190px}
+  .frow .idv{font-size:13px;color:var(--sub);font-weight:700}
   .acts{display:flex;gap:9px;flex-wrap:wrap;margin:14px 0 4px}
   .pbtn{flex:1;min-width:120px;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent}
   .pbtn.p{background:var(--coral);color:#fff} .pbtn.g{background:var(--green);color:#fff}
@@ -495,10 +497,11 @@ function setFieldAbs(id,field,valstr){
 function setText(id,field,val){
   var it=itemById(id); if(!it) return;
   if(!GAS_URL){ toast("保存はMacで1回承認後に有効になります"); return; }
-  var cur=(field==="exp")?it.exp:it.batch;
-  if(field==="exp") it.exp=val; else it.batch=val; refreshAll(id);
+  if(field==="name" && !(""+val).trim()){ toast("商品名は空にできません"); refreshAll(id); return; }
+  var cur=it[field];
+  it[field]=val; refreshAll(id);
   gasJsonp({action:"set",id:id,field:field,value:val},function(resp){
-    if(!(resp&&resp.ok)){ if(field==="exp")it.exp=cur; else it.batch=cur; toast(saveErr(resp)); refreshAll(id); }
+    if(!(resp&&resp.ok)){ it[field]=cur; toast(saveErr(resp)); refreshAll(id); }
     else toast("保存しました");
   });
 }
@@ -536,6 +539,16 @@ function edTextRow(id,field,label,val,ph){
   return '<div class="frow"><span class="k">'+label+'</span><span class="ed">'
     +'<input class="txt" type="text" placeholder="'+(ph||"")+'" value="'+esc(val||"")+'" onchange="setText(\''+id+'\',\''+field+'\',this.value)"></span></div>';
 }
+function selRow(id,field,label,cur,opts){
+  var o=opts.map(function(v){ var lb=(v===""?"（未設定）":v); return '<option value="'+esc(v)+'"'+(v===(cur||"")?" selected":"")+'>'+esc(lb)+'</option>'; }).join("");
+  return '<div class="frow"><span class="k">'+label+'</span><span class="ed">'
+    +'<select class="selr" onchange="setText(\''+id+'\',\''+field+'\',this.value)">'+o+'</select></span></div>';
+}
+function distinct(key,extra){
+  var seen={}, out=[]; DATA.items.forEach(function(x){ var v=x[key]; if(v && !seen[v]){ seen[v]=1; out.push(v); } });
+  (extra||[]).forEach(function(v){ if(out.indexOf(v)<0) out.push(v); });
+  return out;
+}
 function refHtml(ref){
   if(!ref) return "—";
   if(isUrl(ref)) return '<a href="'+esc(ref)+'" target="_blank" rel="noopener">開く</a>';
@@ -556,25 +569,47 @@ function renderDetail(id){
   var c=classify(it);
   var thumb=it.img?'<img class="thumb" src="'+it.img+'" alt="" onerror="this.replaceWith(phThumb(\''+esc(it.cat)+'\'))">':'<div class="thumb ph">'+esc((it.cat||"").slice(0,2))+'</div>';
   var ord=it.ordered?'<span class="ordtag">発注済み'+(it.oeta?("・納品予定 "+mdstr(it.oeta)):"")+'</span>':'';
-  var buyBtn=isUrl(it.ref)?'<button class="pbtn o" onclick="window.open(\''+esc(it.ref)+'\',\'_blank\')">🛒 発注サイト</button>':'';
+  // 選択肢
+  var catOpts=distinct('cat',['未分類']); if(catOpts.indexOf(it.cat)<0 && it.cat) catOpts.push(it.cat);
+  var supOpts=distinct('sup',['その他']); if(supOpts.indexOf(it.sup)<0 && it.sup) supOpts.push(it.sup);
+  var freqOpts=distinct('freq',['多','中','少']); freqOpts=[''].concat(freqOpts.filter(function(v){return v!=='';}));
+  // 上部アクション（AppSheet: リンクを開く／在庫ダッシュボードを見る）
+  var openLink = isUrl(it.ref) ? '<button class="pbtn o" onclick="window.open(\''+esc(it.ref)+'\',\'_blank\')">🔗 リンクを開く（発注サイト）</button>' : '';
+  // 発注/受領
   var orderBtn=it.ordered
     ?'<input id="rqty" class="rin" type="number" inputmode="decimal" placeholder="受領数(任意)"><button class="pbtn g" onclick="doReceive(\''+it.id+'\')">受領（入荷）</button>'
     :'<button class="pbtn p" onclick="doOrder(\''+it.id+'\')">発注した</button>';
+  // 計算表示
+  var zaiko = '倉 '+fmt(it.w)+' / 店 '+fmt(it.s)+' / 最低 '+(it.min!=null?fmt(it.min):'—')+'（合計 '+fmt(it.total)+'）';
+  var ostatus = it.ordered ? ('発注済み'+(it.oeta?('（納品予定 '+mdstr(it.oeta)+'）'):'')) : (it.ship?'手配中':'未発注');
+  var ex=expInfo(it);
+
   document.getElementById('detailBody').innerHTML=
      '<div class="shead">'+thumb+'<div class="nm">'+esc(it.name)+' '+ord+'</div><button class="x" onclick="closeDetail()">✕</button></div>'
-    +frow("状態",'<span class="badge '+c.badgeCls+'">'+c.badge+'</span>')
-    +frow("カテゴリー", esc(it.cat||"—"))
-    +frow("発注先", esc(it.sup||"—"))
+    +(openLink?('<div class="acts">'+openLink+'</div>'):'')
+    +edTextRow(it.id,"name","商品名",it.name,"")
+    +'<div class="frow"><span class="k">商品ID</span><span class="idv">'+esc(it.id)+'</span></div>'
+    +selRow(it.id,"cat","カテゴリー",it.cat,catOpts)
+    +selRow(it.id,"sup","発注先",it.sup,supOpts)
+    +selRow(it.id,"freq","発注頻度",it.freq,freqOpts)
     +edRow(it.id,"w","倉庫数量",it.w)
     +edRow(it.id,"s","店舗在庫",it.s)
     +edRow(it.id,"min","最低在庫",it.min)
-    +edRow(it.id,"lead","納期日数",it.lead)
+    +edRow(it.id,"lead","納期（日数）",it.lead)
     +edRow(it.id,"lot","発注ロット",it.lot)
+    +edTextRow(it.id,"memo","備考",it.memo,"")
+    +edTextRow(it.id,"ref","参考URL・連絡先",it.ref,"")
+    +edTextRow(it.id,"ship","配送状況",it.ship,"")
+    +edTextRow(it.id,"eta","お届け予定",it.eta,"例 2026-11-30")
+    +edTextRow(it.id,"shipmemo","配送メモ",it.shipmemo,"")
     +edRow(it.id,"stk","棚卸数",it.stk)
     +edTextRow(it.id,"exp","賞味期限",it.exp,"例 2026-11-30")
     +edTextRow(it.id,"batch","ロット",it.batch,"")
-    +frow("参考URL・連絡先", refHtml(it.ref))
-    +'<div class="acts">'+buyBtn+orderBtn+'</div>'
+    +frow("在庫表示", esc(zaiko))
+    +frow("発注ステータス", '<span class="badge '+c.badgeCls+'">'+c.badge+'</span> '+esc(ostatus))
+    +frow("棚卸差異", diffBadge(it))
+    +frow("期限ステータス", (ex?'<span class="exp '+(ex.cls||"")+'">'+ex.txt+'</span>':'—'))
+    +'<div class="acts">'+orderBtn+'</div>'
     +histHtml(it);
 }
 
