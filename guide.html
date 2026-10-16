@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>在庫アプリ 使い方</title>
+<style>
+  :root{--bg:#faf7f2;--card:#fff;--ink:#2a2420;--sub:#80766c;--line:#e7e0d6;--coral:#d8552c;--coral-bg:#fcebe3;--green:#5a9a1e;--blue:#2f7ed8;--amber:#dd8a00;}
+  *{box-sizing:border-box;margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.65}
+  .sheet{max-width:760px;margin:0 auto;padding:30px 30px 34px}
+  .head{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+  .dot{width:14px;height:14px;border-radius:50%;background:var(--coral);box-shadow:0 0 0 5px #fbe4d8;flex:none}
+  h1{font-size:30px;font-weight:800;letter-spacing:.01em}
+  .lead{color:#5f574e;font-size:15.5px;margin:10px 2px 20px}
+  .tabrow{display:flex;justify-content:space-between;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 10px;margin-bottom:22px;box-shadow:0 2px 10px rgba(60,40,20,.05)}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11.5px;font-weight:800;color:var(--sub)}
+  .tab svg{width:26px;height:26px}
+  .tab.on{color:var(--coral)}
+  .sec{font-size:15px;font-weight:800;color:var(--coral);margin:4px 2px 12px;letter-spacing:.03em}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:15px;box-shadow:0 2px 10px rgba(60,40,20,.05);padding:6px 18px;margin-bottom:22px}
+  .item{display:flex;gap:14px;padding:13px 0;border-bottom:1px solid var(--line)}
+  .item:last-child{border-bottom:none}
+  .ico{width:40px;height:40px;border-radius:11px;background:var(--coral-bg);color:var(--coral);display:flex;align-items:center;justify-content:center;font-size:21px;flex:none}
+  .it .t{font-size:16px;font-weight:800;margin-bottom:2px}
+  .it .d{font-size:14px;color:#5f574e}
+  .pill{display:inline-block;font-size:12.5px;font-weight:800;border-radius:7px;padding:1px 9px;vertical-align:1px}
+  .pill.o{background:var(--coral);color:#fff} .pill.g{background:var(--green);color:#fff} .pill.b{background:#e6effb;color:var(--blue)}
+  .how{display:flex;gap:13px;padding:12px 0;border-bottom:1px dashed var(--line);font-size:15px}
+  .how:last-child{border-bottom:none}
+  .how b{color:var(--ink)} .how .n{width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none}
+  .foot{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:16px 18px;text-align:center;box-shadow:0 2px 10px rgba(60,40,20,.05)}
+  .foot .u{font-size:16px;font-weight:800;color:var(--coral);word-break:break-all}
+  .foot .s{font-size:13.5px;color:var(--sub);margin-top:6px}
+</style>
+</head>
+<body>
+<div class="sheet">
+  <div class="head"><span class="dot"></span><h1>在庫アプリが新しくなりました</h1></div>
+  <div class="lead">いつも在庫管理ありがとうございます。ホーム画面の「在庫」アプリが新しくなりました。<b>変わったところ</b>と<b>毎日の使い方</b>をまとめました。</div>
+
+  <div class="tabrow">
+    <div class="tab on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 10.2v3.1c0 1.7.8 2.8 1.9 3.8H4.6c1.1-1 1.9-2.1 1.9-3.8v-3.1a5.5 5.5 0 0 1 9-4.2"/><path d="M10 20h4"/><circle cx="18.4" cy="5.3" r="2.3" fill="currentColor" stroke="none"/></svg>要発注リスト</div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="16" rx="2.7"/><path d="M7.6 2.9v3.2M16.4 2.9v3.2M3.5 9.2h17"/><path d="m8.3 15 2.7 2.5 4.8-5"/></svg>毎日チェック</div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2.7 8.2 4.5v9.4L12 21.2l-8.2-4.6V7.2L12 2.7Z"/><path d="m3.8 7.2 8.2 4.6 8.2-4.6M12 11.8v9.4"/></svg>商品一覧</div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 9.4 12 4l8.5 5.4v10.8h-17V9.4Z"/><path d="M3.5 9.5h17M8 20.2v-6.8h8v6.8"/></svg>発注先別</div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4.5" width="14" height="16.7" rx="2.2"/><rect x="9.1" y="2.8" width="5.8" height="3.4" rx="1.1" fill="#fff"/><path d="m8.2 11.5 1.1 1.1 1.8-2M13.5 11.7h2.6M8.2 16.4l1.1 1.1 1.8-2M13.5 16.6h2.6"/></svg>棚卸</div>
+  </div>
+
+  <div class="sec">◆ 変わったところ</div>
+  <div class="card">
+    <div class="item"><div class="ico">📱</div><div class="it"><div class="t">下のタブが5つに</div><div class="d">要発注リスト／毎日チェック／商品一覧／発注先別／棚卸。やりたいことで切り替え。</div></div></div>
+    <div class="item"><div class="ico">📷</div><div class="it"><div class="t">全商品に写真が出ます</div><div class="d">パッケージの写真で、どの商品かひと目で分かるようになりました。</div></div></div>
+    <div class="item"><div class="ico">🛒</div><div class="it"><div class="t">一覧からワンタップで「発注した」</div><div class="d">発注したら <span class="pill o">発注した</span> を押す→<span class="pill b">発注済み・お届け予定◯日</span> に変わり、二重発注を防げます。届いたら <span class="pill g">受領</span>。</div></div></div>
+    <div class="item"><div class="ico">🏢</div><div class="it"><div class="t">「発注先」ボタン</div><div class="d">各商品の発注先ボタンから、発注サイト（Amazon/Yahoo）や連絡先がすぐ開きます。</div></div></div>
+    <div class="item"><div class="ico">🚚</div><div class="it"><div class="t">発送メールから自動で「到着待ち」</div><div class="d">発送メールが届くと、自動で「到着待ち・お届け日」が付きます（例：あんこの内藤の粒あん→お届け 10/19）。もう頼んだ品が一目で分かります。</div></div></div>
+    <div class="item"><div class="ico">📋</div><div class="it"><div class="t">棚卸タブ</div><div class="d">数えた数を入れると、システム在庫との差（ロス／多い）が出ます。賞味期限も入れられます。</div></div></div>
+    <div class="item"><div class="ico">👆</div><div class="it"><div class="t">商品名をタップで詳細</div><div class="d">在庫・最低・納期・発注ロット・発注履歴・賞味期限などを確認＆その場で変更できます。</div></div></div>
+    <div class="item"><div class="ico">📊</div><div class="it"><div class="t">上の集計と検索が固定</div><div class="d">今すぐ発注／到着待ち／在庫わずか／十分の件数と、検索・発注先しぼりこみが、スクロールしても上に残ります。</div></div></div>
+  </div>
+
+  <div class="sec">◆ 毎日のかんたん手順</div>
+  <div class="card">
+    <div class="how"><div class="n">1</div><div>在庫が減ったら … 倉庫／店舗の <b>「−」「＋」</b> で数を調整</div></div>
+    <div class="how"><div class="n">2</div><div>発注したら … その品の <b>「🛒 発注した」</b> を押す（届いたら <b>「📦 受領」</b>）</div></div>
+    <div class="how"><div class="n">3</div><div>棚卸のとき … <b>棚卸タブ</b>で数えた数を入力（差が自動で出ます）</div></div>
+  </div>
+
+  <div class="foot">
+    <div class="u">https://sususuyasusu.github.io/dorayama-stock/</div>
+    <div class="s">スマホで開いて「ホーム画面に追加」すると、全画面アプリとして使えます。</div>
+  </div>
+</div>
+</body>
+</html>
