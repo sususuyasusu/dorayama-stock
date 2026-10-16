@@ -7,7 +7,7 @@ var TOKEN = 'dorayama-zaiko-2026';
 
 function sheet_(){ return SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME); }
 function hist_(){ return SpreadsheetApp.openById(SHEET_ID).getSheetByName(HIST_NAME); }
-function num_(x){ var n = Number(String(x).replace(/,/g,'').trim()); return isNaN(n) ? null : n; }
+function num_(x){ var s = String(x).replace(/,/g,'').trim(); if (s==='') return null; var n = Number(s); return isNaN(n) ? null : n; }
 function nowStr_(){ return Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy/MM/dd HH:mm:ss'); }
 
 // 日時文字列を TZ非依存の比較キー(YYYYMMDDhhmmss)にする。日付だけの取り出しも。
