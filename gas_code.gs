@@ -195,6 +195,17 @@ function doAdd_(p){
   } finally { lock.releaseLock(); }
 }
 
+// 商品を削除（その行を空にする＝一覧から消える）
+function doDelete_(p){
+  if (p.token !== TOKEN) return { ok:false, error:'auth' };
+  var lock = LockService.getScriptLock(); lock.waitLock(8000);
+  try {
+    var sh=sheet_(); var f=findRow_(sh,p.id); if(!f) return { ok:false, error:'notfound' };
+    sh.getRange(f.row, 1, 1, f.head.length).clearContent();
+    return { ok:true, id:p.id };
+  } finally { lock.releaseLock(); }
+}
+
 function doGet(e){
   var out; var a = e.parameter.action;
   try {
@@ -203,6 +214,7 @@ function doGet(e){
     else if (a==='order') out=doOrder_(e.parameter);
     else if (a==='receive') out=doReceive_(e.parameter);
     else if (a==='add') out=doAdd_(e.parameter);
+    else if (a==='delete') out=doDelete_(e.parameter);
     else out={ ok:true, updated:Utilities.formatDate(new Date(),'Asia/Tokyo','yyyy-MM-dd HH:mm'), items:readAll_() };
   } catch(err){ out={ ok:false, error:String(err) }; }
   var txt=JSON.stringify(out); var cb=e.parameter.callback;
