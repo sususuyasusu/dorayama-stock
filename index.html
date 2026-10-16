@@ -111,6 +111,9 @@
   .minlbl b{color:var(--ink);font-weight:800}
   .obtn{border:1px solid var(--line);background:var(--card);color:var(--coral);font-size:12px;font-weight:800;border-radius:999px;padding:7px 13px;cursor:pointer;-webkit-tap-highlight-color:transparent;box-shadow:var(--shadow);white-space:nowrap}
   .obtn:active{transform:scale(.95);background:var(--coral-bg)}
+  .obtn.order{color:#fff;background:var(--coral);border-color:var(--coral)}
+  .obtn.recv{color:#fff;background:var(--green);border-color:var(--green)}
+  .obtn.order:active,.obtn.recv:active{filter:brightness(.92);background:var(--coral)}
   .sup-tag{background:var(--blue-bg);color:var(--blue);border-radius:6px;padding:1px 7px;font-weight:700;font-size:11px}
 
   /* 棚卸の行 */
@@ -399,13 +402,20 @@ function rowEl(it,c){
       stepperHtml(it.id,"w","倉庫",it.w)+
       stepperHtml(it.id,"s","店舗",it.s)+
       '<span class="minlbl">最低 <b>'+(mn!=null?fmt(mn):"—")+'</b></span>'+
+      orderBtnHtml(it)+
       obtnHtml(it)+
     '</div>';
   return row;
 }
 function obtnHtml(it){
-  var lbl = isUrl(it.ref) ? "🛒 発注サイト" : "🏢 発注先";
+  var lbl = isUrl(it.ref) ? "📤 発注サイト" : "🏢 発注先";
   return '<button class="obtn" onclick="openSupplier(\''+it.id+'\')">'+lbl+'</button>';
+}
+// 要発注リストの各行の「発注した」(未発注) /「受領」(発注済み) ボタン
+function orderBtnHtml(it){
+  if(STATE.tab!=="要発注") return "";
+  if(it.ordered) return '<button class="obtn recv" onclick="doReceive(\''+it.id+'\')">📦 受領</button>';
+  return '<button class="obtn order" onclick="doOrder(\''+it.id+'\')">🛒 発注した</button>';
 }
 function openSupplier(id){
   var it=itemById(id); if(!it) return;
