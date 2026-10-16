@@ -61,10 +61,10 @@ function readAll_(){
   var vals = sheet_().getDataRange().getDisplayValues();
   var head = vals[0];
   function gi(n){ return head.indexOf(n); }
-  var ci = { id:gi('商品ID'), name:gi('商品名'), cat:gi('カテゴリー'), sup:gi('発注先'),
+  var ci = { id:gi('商品ID'), name:gi('商品名'), cat:gi('カテゴリー'), sup:gi('発注先'), freq:gi('発注頻度'),
     w:gi('倉庫数量'), s:gi('店舗在庫'), mn:gi('最低在庫'), lead:gi('納期'), lot:gi('発注ロット'),
     ref:gi('参考URL・連絡先'), lr:gi('LastReceived'), ship:gi('配送状況'), eta:gi('お届け予定'),
-    exp:gi('賞味期限'), stk:gi('棚卸数'), batch:gi('ロット') };
+    exp:gi('賞味期限'), stk:gi('棚卸数'), batch:gi('ロット'), memo:gi('備考'), shipmemo:gi('配送メモ') };
   var hm = histMap_();
   var items = [];
   for (var r=1; r<vals.length; r++){
@@ -80,9 +80,11 @@ function readAll_(){
     var os = orderState_(hm[id], lead, (ci.lr>=0?dkey_(row[ci.lr]):null));
     items.push({ id:id, name:name, cat:(String(row[ci.cat]||'').trim()||'未分類'),
       sup:(String(row[ci.sup]||'').trim()||'未設定'),
+      freq:(ci.freq>=0?String(row[ci.freq]||'').trim():''),
       w:w, s:s, total:total, min:mn, status:status, lead:lead, lot:lot, ref:ref,
       ordered:os.ordered, oeta:os.oeta, hist:os.hist,
       ship:String(row[ci.ship]||'').trim(), eta:String(row[ci.eta]||'').trim(), exp:String(row[ci.exp]||'').trim(),
+      memo:(ci.memo>=0?String(row[ci.memo]||'').trim():''), shipmemo:(ci.shipmemo>=0?String(row[ci.shipmemo]||'').trim():''),
       stk:(ci.stk>=0?num_(row[ci.stk]):null), batch:(ci.batch>=0?String(row[ci.batch]||'').trim():'') });
   }
   return items;
@@ -115,9 +117,11 @@ function doInc_(p){
 function doSet_(p){
   if (p.token !== TOKEN) return { ok:false, error:'auth' };
   var numMap = { min:'最低在庫', lead:'納期', lot:'発注ロット', w:'倉庫数量', s:'店舗在庫', stk:'棚卸数' };
-  var txtMap = { exp:'賞味期限', batch:'ロット' };
+  var txtMap = { exp:'賞味期限', batch:'ロット', name:'商品名', cat:'カテゴリー', sup:'発注先', freq:'発注頻度',
+                 memo:'備考', ref:'参考URL・連絡先', ship:'配送状況', eta:'お届け予定', shipmemo:'配送メモ' };
   var isNum = !!numMap[p.field]; var field = numMap[p.field] || txtMap[p.field];
   if (!field) return { ok:false, error:'field' };
+  if (p.field==='name' && !String(p.value==null?'':p.value).trim()) return { ok:false, error:'empty' };
   var val;
   if (isNum){ var v=Number(String(p.value).replace(/,/g,'')); if(isNaN(v)||v<0) return {ok:false,error:'value'}; val=v; }
   else { val = String(p.value==null?'':p.value); }
