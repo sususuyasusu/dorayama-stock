@@ -25,6 +25,8 @@
     font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
     -webkit-font-smoothing:antialiased;line-height:1.5;padding:0 16px calc(76px + env(safe-area-inset-bottom));-webkit-text-size-adjust:100%;}
   .wrap{max-width:860px;margin:0 auto}
+  .topbar{position:sticky;top:0;z-index:30;background:var(--bg);padding-top:env(safe-area-inset-top)}
+  .topbar:after{content:"";position:absolute;left:0;right:0;bottom:-12px;height:12px;background:linear-gradient(var(--bg),rgba(250,247,242,0));pointer-events:none}
   header.top{padding:16px 2px 8px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
   .ttl{font-size:20px;font-weight:800;letter-spacing:.02em;display:flex;align-items:center;gap:9px}
   .ttl .dot{width:11px;height:11px;border-radius:50%;background:var(--coral);box-shadow:0 0 0 4px #fbe4d8}
@@ -202,19 +204,21 @@
 </head>
 <body>
 <div class="wrap">
-  <header class="top">
-    <div class="ttl"><span class="dot"></span>どら山 在庫ダッシュボード</div>
-    <div class="updated">最終更新 <b id="upd">—</b></div>
-  </header>
+  <div class="topbar" id="topbar">
+    <header class="top">
+      <div class="ttl"><span class="dot"></span>どら山 在庫ダッシュボード</div>
+      <div class="updated">最終更新 <b id="upd">—</b></div>
+    </header>
 
-  <div class="hero" id="hero"></div>
+    <div class="hero" id="hero"></div>
 
-  <div class="banner" id="banner">＋/− での在庫の変更は、いまは準備中です（Macで1回の承認後に保存できるようになります）。</div>
+    <div class="banner" id="banner">＋/− での在庫の変更は、いまは準備中です（Macで1回の承認後に保存できるようになります）。</div>
 
-  <div class="controls" id="controls">
-    <div class="chips" id="chips"></div>
-    <div class="selwrap" id="supwrap"><label>発注先</label><select class="sel" id="supsel"></select></div>
-    <div class="search"><input id="q" type="search" placeholder="品名でさがす" autocomplete="off"></div>
+    <div class="controls" id="controls">
+      <div class="chips" id="chips"></div>
+      <div class="selwrap" id="supwrap"><label>発注先</label><select class="sel" id="supsel"></select></div>
+      <div class="search"><input id="q" type="search" placeholder="品名でさがす" autocomplete="off"></div>
+    </div>
   </div>
 
   <div class="list" id="list"></div>
