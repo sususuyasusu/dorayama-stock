@@ -73,8 +73,8 @@
   .row.lead-amber{border-left:4px solid var(--amber)}
   .row.lead-blue{border-left:4px solid var(--blue)}
   .row.lead-green{border-left:4px solid var(--green)}
-  .thumb{grid-row:1 / span 2;width:40px;height:40px;border-radius:9px;object-fit:cover;background:var(--gray-bg);border:1px solid var(--line)}
-  .thumb.ph{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--sub)}
+  .thumb{grid-row:1 / span 2;width:40px;height:40px;border-radius:9px;object-fit:cover;background:var(--gray-bg);border:1px solid var(--line);cursor:zoom-in}
+  .thumb.ph{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--sub);cursor:default}
   .name{font-size:14px;font-weight:700;letter-spacing:.01em;min-width:0;line-height:1.3}
   .name.tap{cursor:pointer}
   .chev{color:var(--sub);font-weight:700;margin-left:5px;font-size:15px}
@@ -192,6 +192,13 @@
     box-shadow:0 6px 20px rgba(0,0,0,.25);opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:70;max-width:88%;text-align:center}
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
+  /* 写真の拡大ポップアップ */
+  .lbox{position:fixed;inset:0;background:rgba(28,20,14,.84);z-index:80;display:none;align-items:center;justify-content:center;padding:22px;opacity:0;transition:opacity .2s ease;cursor:zoom-out;-webkit-tap-highlight-color:transparent}
+  .lbox img{max-width:90vw;max-height:84vh;border-radius:16px;box-shadow:0 22px 60px rgba(0,0,0,.55);transform:scale(.3);opacity:.2;transition:transform .3s cubic-bezier(.2,1.3,.4,1),opacity .22s ease}
+  .lbox.in{opacity:1}
+  .lbox.in img{transform:scale(1);opacity:1}
+  .lbox.q img{transition:transform .2s cubic-bezier(.4,0,1,1),opacity .18s ease}
+
   @media (max-width:560px){
     .hero{grid-template-columns:repeat(4,1fr);gap:5px}
     .kpi{padding:7px 4px}
@@ -240,6 +247,7 @@
 
 <div class="modal" id="detail"><div class="sheet" id="detailBody"></div></div>
 <div class="modal" id="addm"><div class="sheet" id="addBody"></div></div>
+<div class="lbox" id="lbox" onclick="closePhoto()"><img id="lboxImg" src="" alt="商品写真"></div>
 <div id="toast"></div>
 
 <script>
@@ -251,6 +259,10 @@ function fmt(n){ if(n==null) return "—"; n=Math.round(n*10)/10; return (""+n).
 function esc(s){ return (""+(s==null?"":s)).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
 function toast(msg){ var t=document.getElementById('toast'); t.textContent=msg; t.className='show';
   clearTimeout(window._tt); window._tt=setTimeout(function(){ t.className=''; }, 2600); }
+function openPhoto(src){ if(!src) return; var b=document.getElementById('lbox'),im=document.getElementById('lboxImg');
+  clearTimeout(window._lb); im.src=src; b.className='lbox'; b.style.display='flex'; void b.offsetWidth; b.className='lbox in'; }
+function closePhoto(){ var b=document.getElementById('lbox'),im=document.getElementById('lboxImg');
+  b.className='lbox q'; window._lb=setTimeout(function(){ b.style.display='none'; b.className='lbox'; im.src=''; }, 240); }
 function mdstr(iso){ var m=(""+iso).match(/\d{4}-(\d{2})-(\d{2})/); return m?((+m[1])+"/"+(+m[2])):iso; }
 
 function classify(it){
@@ -387,7 +399,7 @@ function rowEl(it,c){
   var row=document.createElement('div'); row.className="row "+c.lead; row.setAttribute('data-id', it.id);
   var ex=expInfo(it);
   var thumb = it.img
-    ? '<img class="thumb" src="'+it.img+'" loading="lazy" alt="" data-cat="'+esc(it.cat)+'" onerror="this.replaceWith(phThumb(this.getAttribute(\'data-cat\')))">'
+    ? '<img class="thumb" src="'+it.img+'" loading="lazy" alt="" data-cat="'+esc(it.cat)+'" onclick="event.stopPropagation();openPhoto(this.src)" onerror="this.replaceWith(phThumb(this.getAttribute(\'data-cat\')))">'
     : '<div class="thumb ph">'+esc((it.cat||"").slice(0,2))+'</div>';
   var cart=isUrl(it.ref)?' <a class="cart" href="'+esc(it.ref)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">🛒</a>':'';
   var metaHtml='<span class="tag">'+esc(it.cat)+'</span><span class="sup-tag">'+esc(it.sup||'未設定')+'</span>'+(ex&&ex.cls?'<span class="exp '+ex.cls+'">'+ex.txt+'</span>':'');
@@ -583,7 +595,7 @@ function closeDetail(){ OPEN_ID=null; document.getElementById('detail').classNam
 function renderDetail(id){
   var it=itemById(id); if(!it){ closeDetail(); return; }
   var c=classify(it);
-  var thumb=it.img?'<img class="thumb" src="'+it.img+'" alt="" onerror="this.replaceWith(phThumb(\''+esc(it.cat)+'\'))">':'<div class="thumb ph">'+esc((it.cat||"").slice(0,2))+'</div>';
+  var thumb=it.img?'<img class="thumb" src="'+it.img+'" alt="" onclick="event.stopPropagation();openPhoto(this.src)" onerror="this.replaceWith(phThumb(\''+esc(it.cat)+'\'))">':'<div class="thumb ph">'+esc((it.cat||"").slice(0,2))+'</div>';
   var ord=it.ordered?'<span class="ordtag">発注済み'+(it.oeta?("・納品予定 "+mdstr(it.oeta)):"")+'</span>':'';
   // 選択肢
   var catOpts=distinct('cat',['未分類']); if(catOpts.indexOf(it.cat)<0 && it.cat) catOpts.push(it.cat);
