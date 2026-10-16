@@ -97,3 +97,13 @@ WROTE /Users/suzukiyasuyuki/dw-stock-dashboard/data.json items= 65 updated= 2026
 To https://github.com/sususuyasusu/dorayama-stock.git
    afbb2ce..a40599d  main -> main
 2026-10-16 08:15:04 pushed
+/Users/suzukiyasuyuki/Library/Python/3.9/lib/python/site-packages/google/auth/__init__.py:54: FutureWarning: You are using a Python version 3.9 past its end of life. Google will update google-auth with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade your Python version, and then update google-auth.
+  warnings.warn(eol_message.format("3.9"), FutureWarning)
+/Users/suzukiyasuyuki/Library/Python/3.9/lib/python/site-packages/google/oauth2/__init__.py:40: FutureWarning: You are using a Python version 3.9 past its end of life. Google will update google-auth with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade your Python version, and then update google-auth.
+  warnings.warn(eol_message.format("3.9"), FutureWarning)
+/Users/suzukiyasuyuki/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+WROTE /Users/suzukiyasuyuki/dw-stock-dashboard/data.json items= 65 updated= 2026-10-16 09:15
+To https://github.com/sususuyasusu/dorayama-stock.git
+   498ab14..ccc23e2  main -> main
+2026-10-16 09:15:04 pushed

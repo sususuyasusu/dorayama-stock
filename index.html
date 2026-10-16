@@ -162,7 +162,7 @@
 <script>
 var TOKEN = "dorayama-zaiko-2026";
 var STATE = { cat:"すべて", group:null, q:"", view:"urgency" };
-var DATA = null, GAS_URL = "";
+var DATA = null, GAS_URL = "", IMG_BY_ID = {};
 
 function fmt(n){ if(n==null) return "—"; n=Math.round(n*10)/10; return (""+n).replace(/\B(?=(\d{3})+(?!\d))/g,","); }
 function toast(msg){ var t=document.getElementById('toast'); t.textContent=msg; t.className='show';
@@ -253,7 +253,9 @@ function rowEl(it,c){
 
   var row=document.createElement('div'); row.className="row "+c.lead; row.setAttribute('data-id', it.id);
   var ex=expInfo(it);
-  var thumb = '<div class="thumb ph">'+(it.cat||"").slice(0,2)+'</div>';
+  var thumb = it.img
+    ? '<img class="thumb" src="'+it.img+'" loading="lazy" alt="" data-cat="'+(it.cat||"")+'" onerror="this.replaceWith(phThumb(this.getAttribute(\'data-cat\')))">'
+    : '<div class="thumb ph">'+(it.cat||"").slice(0,2)+'</div>';
   var metaHtml='<span class="tag">'+it.cat+'</span>'+(ex?'<span class="exp '+ex.cls+'">'+ex.txt+'</span>':'');
   var minMark=(minPct!=null)?'<div class="minmark" style="left:'+minPct+'%"></div>':'';
   var nsub=c.sub?'<div class="nsub">'+c.sub+'</div>':'';
@@ -273,6 +275,7 @@ function rowEl(it,c){
     '</div>';
   return row;
 }
+function phThumb(cat){ var d=document.createElement('div'); d.className='thumb ph'; d.textContent=(cat||'').slice(0,2); return d; }
 function stepperHtml(id,field,label,val){
   return '<div class="stepper"><span class="lbl">'+label+'</span>'+
     '<button class="btn" onclick="chg(\''+id+'\',\''+field+'\',-1,this)">−</button>'+
@@ -328,7 +331,13 @@ function gasLoad(cb){
   setTimeout(function(){ if(!done){ cleanup(); cb(null); } }, 10000);
 }
 
-function applyData(d){ DATA=d; document.getElementById('upd').textContent=d.updated||""; render(); }
+function applyData(d){
+  if(d && d.items){ d.items.forEach(function(it){
+    if(it.img){ IMG_BY_ID[it.id]=it.img; }          // data.jsonの写真を記憶
+    else if(IMG_BY_ID[it.id]){ it.img=IMG_BY_ID[it.id]; } // GAS更新後も写真を引き継ぐ
+  }); }
+  DATA=d; document.getElementById('upd').textContent=d.updated||""; render();
+}
 
 function boot(){
   document.getElementById('q').addEventListener('input',function(e){STATE.q=e.target.value;render();});
