@@ -39,8 +39,10 @@ function orderState_(evs, lead, lastRecvT){
   }
   var ordered = (lastOrderT!==null) && (lastRecv===null || lastOrderT>lastRecv);
   var eta='';
-  if (ordered && lead!==null){
-    var m=String(lastOrderStr).match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+  if (ordered && lead!==null && lastOrderT!==null){
+    // 発注日(JST)の年月日に納期日数を足す（タイムゾーンずれを避ける）
+    var ds=Utilities.formatDate(new Date(lastOrderT),'Asia/Tokyo','yyyy-MM-dd');
+    var m=ds.match(/(\d{4})-(\d{2})-(\d{2})/);
     if (m){ var d=new Date(+m[1], +m[2]-1, +m[3]+Number(lead)); eta=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
   }
   var hist=[]; for (var j=Math.max(0,evs.length-8);j<evs.length;j++){ hist.push({dt:evs[j].dt,kind:evs[j].kind,qty:evs[j].qty,memo:evs[j].memo}); }
