@@ -109,6 +109,9 @@
   .btn:active{transform:scale(.92);background:var(--gray-bg)}
   .minlbl{font-size:11.5px;color:var(--sub);font-weight:700}
   .minlbl b{color:var(--ink);font-weight:800}
+  .obtn{border:1px solid var(--line);background:var(--card);color:var(--coral);font-size:12px;font-weight:800;border-radius:999px;padding:7px 13px;cursor:pointer;-webkit-tap-highlight-color:transparent;box-shadow:var(--shadow);white-space:nowrap}
+  .obtn:active{transform:scale(.95);background:var(--coral-bg)}
+  .sup-tag{background:var(--blue-bg);color:var(--blue);border-radius:6px;padding:1px 7px;font-weight:700;font-size:11px}
 
   /* 棚卸の行 */
   .srow{background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:11px 13px}
@@ -376,7 +379,7 @@ function rowEl(it,c){
     ? '<img class="thumb" src="'+it.img+'" loading="lazy" alt="" data-cat="'+esc(it.cat)+'" onerror="this.replaceWith(phThumb(this.getAttribute(\'data-cat\')))">'
     : '<div class="thumb ph">'+esc((it.cat||"").slice(0,2))+'</div>';
   var cart=isUrl(it.ref)?' <a class="cart" href="'+esc(it.ref)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">🛒</a>':'';
-  var metaHtml='<span class="tag">'+esc(it.cat)+'</span>'+(ex&&ex.cls?'<span class="exp '+ex.cls+'">'+ex.txt+'</span>':'');
+  var metaHtml='<span class="tag">'+esc(it.cat)+'</span><span class="sup-tag">'+esc(it.sup||'未設定')+'</span>'+(ex&&ex.cls?'<span class="exp '+ex.cls+'">'+ex.txt+'</span>':'');
   var minMark=(minPct!=null)?'<div class="minmark" style="left:'+minPct+'%"></div>':'';
   var nsub=c.sub?'<div class="nsub">'+c.sub+'</div>':'';
 
@@ -392,8 +395,18 @@ function rowEl(it,c){
       stepperHtml(it.id,"w","倉庫",it.w)+
       stepperHtml(it.id,"s","店舗",it.s)+
       '<span class="minlbl">最低 <b>'+(mn!=null?fmt(mn):"—")+'</b></span>'+
+      obtnHtml(it)+
     '</div>';
   return row;
+}
+function obtnHtml(it){
+  var lbl = isUrl(it.ref) ? "🛒 発注サイト" : "🏢 発注先";
+  return '<button class="obtn" onclick="openSupplier(\''+it.id+'\')">'+lbl+'</button>';
+}
+function openSupplier(id){
+  var it=itemById(id); if(!it) return;
+  if(isUrl(it.ref)){ window.open(it.ref,'_blank','noopener'); }
+  else { openDetail(id); }   // URLでないときは連絡先(電話/LINE等)を詳細で表示
 }
 function stepperHtml(id,field,label,val){
   return '<div class="stepper"><span class="lbl">'+label+'</span>'+
