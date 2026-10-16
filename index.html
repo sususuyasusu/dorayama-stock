@@ -160,6 +160,7 @@
   .pbtn.p{background:var(--coral);color:#fff} .pbtn.g{background:var(--green);color:#fff}
   .pbtn.o{background:var(--card);color:var(--ink);border:1px solid var(--line)}
   .pbtn:active{transform:scale(.98)} .pbtn.busy{opacity:.5;pointer-events:none}
+  .rin{flex:1;min-width:100px;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:12px;font-size:14px;font-weight:700;text-align:center;color:var(--ink)}
   .hist{margin-top:6px}
   .hist .h{font-size:12.5px;color:var(--sub);font-weight:800;margin:12px 0 4px}
   .hist .hr{display:flex;justify-content:space-between;font-size:12.5px;padding:6px 2px;border-bottom:1px dashed var(--line);color:var(--ink)}
@@ -407,8 +408,7 @@ function doOrder(id){
 function doReceive(id){
   var it=itemById(id); if(!it) return;
   if(!GAS_URL){ toast("保存はMacで1回承認後に有効になります"); return; }
-  var qty=prompt("受領した数量を入れてください（空欄なら在庫は変えず、発注済みの解除だけ）","");
-  if(qty===null) return;
+  var el=document.getElementById('rqty'); var qty=el?(el.value||""):"";
   gasJsonp({action:"receive",id:id,qty:qty},function(resp){
     if(resp&&resp.ok){ it.ordered=false; it.oeta=""; if(resp.warehouse!=null){ it.w=Number(resp.warehouse); it.total=it.w+it.s; } toast("受領を記録しました"); reloadLive(); }
     else toast(saveErr(resp));
@@ -437,7 +437,9 @@ function renderDetail(id){
   var thumb=it.img?'<img class="thumb" src="'+it.img+'" alt="" onerror="this.replaceWith(phThumb(\''+(it.cat||"")+'\'))">':'<div class="thumb ph">'+(it.cat||"").slice(0,2)+'</div>';
   var ord=it.ordered?'<span class="ordtag">発注済み'+(it.oeta?("・納品予定 "+mdstr(it.oeta)):"")+'</span>':'';
   var buyBtn=it.buy?'<button class="pbtn o" onclick="window.open(\''+it.buy+'\',\'_blank\')">🛒 発注サイト</button>':'';
-  var orderBtn=it.ordered?'<button class="pbtn g" onclick="doReceive(\''+it.id+'\')">受領（入荷）</button>':'<button class="pbtn p" onclick="doOrder(\''+it.id+'\')">発注した</button>';
+  var orderBtn=it.ordered
+    ?'<input id="rqty" class="rin" type="number" inputmode="decimal" placeholder="受領数(任意)"><button class="pbtn g" onclick="doReceive(\''+it.id+'\')">受領（入荷）</button>'
+    :'<button class="pbtn p" onclick="doOrder(\''+it.id+'\')">発注した</button>';
   document.getElementById('detailBody').innerHTML=
      '<div class="shead">'+thumb+'<div class="nm">'+it.name+' '+ord+'</div><button class="x" onclick="closeDetail()">✕</button></div>'
     +frow("状態",'<span class="badge '+c.badgeCls+'">'+c.badge+'</span>')

@@ -27,19 +27,21 @@ function histMap_(){
   return m;
 }
 function parseT_(s){ s=String(s||'').trim(); if(!s) return null; var t=(new Date(s.replace(/-/g,'/'))).getTime(); return isNaN(t)?null:t; }
+function isRecv_(k){ return k.indexOf('受領')===0 || k.indexOf('入荷')===0 || k.indexOf('入庫')===0; }
 function orderState_(evs, lead, lastRecvT){
-  // 発注済み＝最後の発注が、最終受領(商品マスタLastReceived or 履歴の受領)より後
+  // 発注済み＝最後の発注が、最終受領(商品マスタLastReceived or 履歴の入庫)より後
   evs = evs || [];
-  var lastOrder=null, lastRecv=(lastRecvT||null);
+  var lastOrderT=null, lastOrderStr='', lastRecv=(lastRecvT||null);
   for (var i=0;i<evs.length;i++){
-    if (evs[i].kind.indexOf('発注')===0){ if(evs[i].t) lastOrder=evs[i].t; }
-    else if (evs[i].kind.indexOf('受領')===0 || evs[i].kind.indexOf('入荷')===0){ if(evs[i].t && (lastRecv===null || evs[i].t>lastRecv)) lastRecv=evs[i].t; }
+    var k=evs[i].kind;
+    if (k.indexOf('発注')===0){ if(evs[i].t){ lastOrderT=evs[i].t; lastOrderStr=evs[i].dt; } }
+    else if (isRecv_(k)){ if(evs[i].t && (lastRecv===null || evs[i].t>lastRecv)) lastRecv=evs[i].t; }
   }
-  var ordered = (lastOrder!==null) && (lastRecv===null || lastOrder>lastRecv);
+  var ordered = (lastOrderT!==null) && (lastRecv===null || lastOrderT>lastRecv);
   var eta='';
   if (ordered && lead!==null){
-    var d=new Date(lastOrder + Number(lead)*86400000);
-    if (!isNaN(d.getTime())) eta=Utilities.formatDate(d,'Asia/Tokyo','yyyy-MM-dd');
+    var m=String(lastOrderStr).match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+    if (m){ var d=new Date(+m[1], +m[2]-1, +m[3]+Number(lead)); eta=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
   }
   var hist=[]; for (var j=Math.max(0,evs.length-8);j<evs.length;j++){ hist.push({dt:evs[j].dt,kind:evs[j].kind,qty:evs[j].qty,memo:evs[j].memo}); }
   hist.reverse();
@@ -140,7 +142,7 @@ function doReceive_(p){
   try {
     var hs = hist_(); var h = hs.getDataRange().getValues()[0];
     var rowObj = {}; rowObj['記録ID']=Utilities.getUuid().substring(0,8); rowObj['日時']=nowStr_();
-    rowObj['商品ID']=String(p.id).trim(); rowObj['種別']='受領';
+    rowObj['商品ID']=String(p.id).trim(); rowObj['種別']='入庫';
     rowObj['数量']=(p.qty!==undefined&&p.qty!=='')?p.qty:''; rowObj['担当者']='アプリ'; rowObj['メモ']=p.memo||'';
     hs.appendRow(h.map(function(n){ return rowObj[n]!==undefined?rowObj[n]:''; }));
     var sh=sheet_(); var f=findRow_(sh,p.id); var nv=null;
