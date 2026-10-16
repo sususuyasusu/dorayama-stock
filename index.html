@@ -341,8 +341,8 @@ function render(){
 
   // 並び・グループ
   var groupKey;
-  if(tab==="要発注"){ groupKey=function(x){ return x.it.ordered?"発注済み":"未発注"; };
-    rows.sort(function(a,b){ var ga=a.it.ordered?1:0, gb=b.it.ordered?1:0; if(ga!==gb)return ga-gb; return a.c.pri-b.c.pri; }); }
+  if(tab==="要発注"){ groupKey=function(x){ return x.c.gk==="到着待ち"?"発注済み":"未発注"; };
+    rows.sort(function(a,b){ var ga=(a.c.gk==="到着待ち")?1:0, gb=(b.c.gk==="到着待ち")?1:0; if(ga!==gb)return ga-gb; return a.c.pri-b.c.pri; }); }
   else if(tab==="発注先"){ groupKey=function(x){ return x.it.sup||"未設定"; };
     rows.sort(function(a,b){ var sa=a.it.sup||"", sb=b.it.sup||""; if(sa!==sb)return sa<sb?-1:1; return a.c.pri-b.c.pri; }); }
   else { groupKey=function(x){ return x.it.cat; };     // 商品一覧・棚卸＝カテゴリー順
