@@ -138,7 +138,9 @@
     display:flex;z-index:45;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -2px 12px rgba(60,40,20,.06)}
   .navbtn{flex:1;background:none;border:none;padding:8px 2px 7px;display:flex;flex-direction:column;align-items:center;gap:3px;
     font-size:10.5px;font-weight:800;color:var(--sub);cursor:pointer;-webkit-tap-highlight-color:transparent}
-  .navbtn .ic{font-size:20px;line-height:1}
+  .navbtn .ic{position:relative;display:flex;align-items:center;justify-content:center;line-height:1}
+  .navbtn .ic svg{width:25px;height:25px;display:block}
+  .navbadge{position:absolute;top:-6px;right:-10px;min-width:16px;height:16px;border-radius:8px;background:var(--red);color:#fff;font-size:10px;line-height:16px;text-align:center;font-weight:800;border:2px solid var(--card);padding:0 2px;box-sizing:content-box}
   .navbtn.on{color:var(--coral)}
   .navbtn.off{opacity:.36;pointer-events:none}
 
@@ -221,11 +223,11 @@
 <button class="fab" id="fab" title="商品を追加">＋</button>
 
 <nav class="nav" id="nav">
-  <button class="navbtn" data-tab="要発注"><span class="ic">🔔</span>要発注リスト</button>
-  <button class="navbtn off" data-tab="毎日"><span class="ic">🗓</span>毎日チェック</button>
-  <button class="navbtn" data-tab="商品"><span class="ic">📦</span>商品一覧</button>
-  <button class="navbtn" data-tab="発注先"><span class="ic">🏢</span>発注先別</button>
-  <button class="navbtn" data-tab="棚卸"><span class="ic">📋</span>棚卸</button>
+  <button class="navbtn" data-tab="要発注"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 10.2v3.1c0 1.7.8 2.8 1.9 3.8H4.6c1.1-1 1.9-2.1 1.9-3.8v-3.1a5.5 5.5 0 0 1 9-4.2"/><path d="M10 20h4"/><circle cx="18.4" cy="5.3" r="2.3" fill="currentColor" stroke="none"/></svg><span class="navbadge" id="nbadge" style="display:none">0</span></span>要発注リスト</button>
+  <button class="navbtn off" data-tab="毎日"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="16" rx="2.7"/><path d="M7.6 2.9v3.2M16.4 2.9v3.2M3.5 9.2h17"/><path d="m8.3 15 2.7 2.5 4.8-5"/></svg></span>毎日チェック</button>
+  <button class="navbtn" data-tab="商品"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2.7 8.2 4.5v9.4L12 21.2l-8.2-4.6V7.2L12 2.7Z"/><path d="m3.8 7.2 8.2 4.6 8.2-4.6M12 11.8v9.4M8 4.9l8.3 4.5v3.3"/></svg></span>商品一覧</button>
+  <button class="navbtn" data-tab="発注先"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 9.4 12 4l8.5 5.4v10.8h-17V9.4Z"/><path d="M3.5 9.5h17M8 20.2v-6.8h8v6.8M8 16.9h8"/><path d="M7 11.5h.01M12 11.5h.01M17 11.5h.01" stroke-width="2.8"/></svg></span>発注先別</button>
+  <button class="navbtn" data-tab="棚卸"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4.5" width="14" height="16.7" rx="2.2"/><rect x="9.1" y="2.8" width="5.8" height="3.4" rx="1.1" fill="var(--card)"/><path d="m8.2 11.5 1.1 1.1 1.8-2M13.5 11.7h2.6M8.2 16.4l1.1 1.1 1.8-2M13.5 16.6h2.6"/></svg></span>棚卸</button>
 </nav>
 
 <div class="modal" id="detail"><div class="sheet" id="detailBody"></div></div>
@@ -277,6 +279,10 @@ function render(){
   var nb=document.getElementById('nav').children;
   for(var i=0;i<nb.length;i++){ var t=nb[i]; var isOff=t.className.indexOf('off')>=0;
     t.className="navbtn"+(isOff?" off":"")+(t.getAttribute('data-tab')===tab?" on":""); }
+  // 要発注タブの通知バッジ（今すぐ発注の件数）
+  var urgent=0; DATA.items.forEach(function(it){ if(classify(it).gk==="今すぐ発注") urgent++; });
+  var nbd=document.getElementById('nbadge');
+  if(nbd){ if(urgent>0){ nbd.textContent=urgent; nbd.style.display=""; } else { nbd.style.display="none"; } }
 
   // コントロールの出し分け
   var showHero=(tab==="要発注");
