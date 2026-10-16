@@ -414,7 +414,7 @@ function obtnHtml(it){
 // 要発注リストの各行の「発注した」(未発注) /「受領」(発注済み) ボタン
 function orderBtnHtml(it){
   if(STATE.tab!=="要発注") return "";
-  if(it.ordered) return '<button class="obtn recv" onclick="doReceive(\''+it.id+'\')">📦 受領</button>';
+  if(classify(it).gk==="到着待ち") return '<button class="obtn recv" onclick="doReceive(\''+it.id+'\')">📦 受領</button>';
   return '<button class="obtn order" onclick="doOrder(\''+it.id+'\')">🛒 発注した</button>';
 }
 function openSupplier(id){
