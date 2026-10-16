@@ -67,6 +67,10 @@
   .grp{font-size:12px;font-weight:800;color:var(--sub);margin:10px 2px 1px;letter-spacing:.04em;display:flex;align-items:center;gap:7px}
   .grp .ln{flex:1;height:1px;background:var(--line)}
   .grp .cnt{color:var(--ink);font-weight:800}
+  .invsum{background:var(--coral-bg);border:1px solid #f1cbb9;border-radius:12px;padding:10px 14px;margin:2px 0 6px;display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .invsum .lb{font-size:12.5px;font-weight:800;color:#8a3b1c}
+  .invsum .amt{font-size:21px;font-weight:800;color:var(--coral);letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+  .invsum .note{font-size:10.5px;color:var(--sub);font-weight:700;width:100%}
   .row{background:var(--card);border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow);
     padding:8px 11px;display:grid;grid-template-columns:auto 1fr auto;gap:2px 10px;align-items:center}
   .row.lead-red{border-left:4px solid var(--red)}
@@ -252,7 +256,7 @@
 <script>
 var TOKEN = "dorayama-zaiko-2026";
 var STATE = { tab:"要発注", cat:"すべて", sup:"すべて", group:null, q:"" };
-var DATA = null, GAS_URL = "", IMG_BY_ID = {}, OPEN_ID = null;
+var DATA = null, GAS_URL = "", IMG_BY_ID = {}, PRICE_BY_ID = {}, OPEN_ID = null;
 
 function fmt(n){ if(n==null) return "—"; n=Math.round(n*10)/10; return (""+n).replace(/\B(?=(\d{3})+(?!\d))/g,","); }
 function esc(s){ return (""+(s==null?"":s)).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
@@ -374,6 +378,15 @@ function render(){
 
   list.innerHTML="";
   if(!rows.length){ list.innerHTML='<div class="empty">該当する品目はありません</div>'; return; }
+  if(tab==="商品"){
+    var invTot=0, priced=0;
+    rows.forEach(function(x){ if(x.it.price!=null && x.it.price!==""){ invTot += (x.it.w+x.it.s)*Number(x.it.price); priced++; } });
+    var allView=(STATE.cat==="すべて" && STATE.sup==="すべて" && !STATE.q.trim());
+    var sum=document.createElement('div'); sum.className="invsum";
+    sum.innerHTML='<span class="lb">商品棚卸高（在庫評価額）</span><span class="amt">¥'+fmt(Math.round(invTot))+'</span>'+
+      '<span class="note">'+(allView?'全商品':'絞り込み')+'の合計　単価設定済み '+priced+' / '+rows.length+' 品（未設定は計算対象外）</span>';
+    list.appendChild(sum);
+  }
   var lastGrp=null;
   rows.forEach(function(x){
     if(groupKey){ var gk=groupKey(x);
@@ -625,6 +638,7 @@ function renderDetail(id){
     +edRow(it.id,"min","最低在庫",it.min)
     +edRow(it.id,"lead","納期（日数）",it.lead)
     +edRow(it.id,"lot","発注ロット",it.lot)
+    +'<div class="frow"><span class="k">単価（円）</span><span class="ed"><input class="txt" type="number" inputmode="numeric" placeholder="例 5585" value="'+(it.price==null?"":it.price)+'" onchange="setFieldAbs(\''+it.id+'\',\'price\',this.value)"></span></div>'
     +edTextRow(it.id,"memo","備考",it.memo,"")
     +edTextRow(it.id,"ref","参考URL・連絡先",it.ref,"")
     +edTextRow(it.id,"ship","配送状況",it.ship,"")
@@ -633,6 +647,7 @@ function renderDetail(id){
     +edTextRow(it.id,"exp","賞味期限",it.exp,"例 2026-11-30")
     +edTextRow(it.id,"batch","ロット",it.batch,"")
     +frow("在庫表示", esc(zaiko))
+    +frow("在庫評価額", ((it.price!=null&&it.price!=="")?('¥'+fmt(Math.round((it.w+it.s)*Number(it.price)))+' <span style="color:var(--sub);font-weight:700">（'+fmt(it.total)+'×'+fmt(it.price)+'）</span>'):'<span style="color:var(--sub)">単価 未設定</span>'))
     +frow("発注ステータス", '<span class="badge '+c.badgeCls+'">'+c.badge+'</span> '+esc(ostatus))
     +frow("期限ステータス", (ex?'<span class="exp '+(ex.cls||"")+'">'+ex.txt+'</span>':'—'))
     +'<div class="acts">'+orderBtn+'</div>'
@@ -702,6 +717,8 @@ function applyData(d){
   if(d && d.items){ d.items.forEach(function(it){
     if(it.img){ IMG_BY_ID[it.id]=it.img; }
     else if(IMG_BY_ID[it.id]){ it.img=IMG_BY_ID[it.id]; }
+    if(it.price!=null && it.price!==""){ PRICE_BY_ID[it.id]=Number(it.price); it.price=Number(it.price); }
+    else if(PRICE_BY_ID[it.id]!=null){ it.price=PRICE_BY_ID[it.id]; }
   }); }
   DATA=d; document.getElementById('upd').textContent=d.updated||""; render();
 }
