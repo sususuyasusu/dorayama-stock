@@ -10,40 +10,47 @@ function hist_(){ return SpreadsheetApp.openById(SHEET_ID).getSheetByName(HIST_N
 function num_(x){ var n = Number(String(x).replace(/,/g,'').trim()); return isNaN(n) ? null : n; }
 function nowStr_(){ return Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy/MM/dd HH:mm:ss'); }
 
-// 商品ID -> 発注状態/納品予定/履歴 を発注履歴から作る
+// 日時文字列を TZ非依存の比較キー(YYYYMMDDhhmmss)にする。日付だけの取り出しも。
+function dkey_(s){
+  var m=String(s||'').match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})(?:[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+  if(!m) return null;
+  function p(x,n){ x=String(x||'0'); while(x.length<n) x='0'+x; return x; }
+  return Number(p(m[1],4)+p(m[2],2)+p(m[3],2)+p(m[4],2)+p(m[5],2)+p(m[6],2));
+}
+function dparts_(s){ var m=String(s||'').match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/); return m?{y:+m[1],mo:+m[2],d:+m[3]}:null; }
+
+// 商品ID -> 発注状態/納品予定/履歴 を発注履歴から作る（表示文字列で読む＝TZずれ無し）
 function histMap_(){
   var m = {};
   try {
-    var v = hist_().getDataRange().getValues(); var h = v[0];
+    var v = hist_().getDataRange().getDisplayValues(); var h = v[0];
     var ci = { dt:h.indexOf('日時'), id:h.indexOf('商品ID'), kind:h.indexOf('種別'), qty:h.indexOf('数量'), memo:h.indexOf('メモ') };
     for (var r=1; r<v.length; r++){
       var pid = String(v[r][ci.id]||'').trim(); if (!pid) continue;
-      (m[pid] = m[pid] || []).push({ dt:String(v[r][ci.dt]||'').trim(),
+      var dt = String(v[r][ci.dt]||'').trim();
+      (m[pid] = m[pid] || []).push({ dt:dt,
         kind:String(v[r][ci.kind]||'発注').trim(), qty:String(v[r][ci.qty]||'').trim(),
-        memo:String(v[r][ci.memo]||'').trim(), t:(new Date(String(v[r][ci.dt]||'').replace(/-/g,'/'))).getTime() });
+        memo:String(v[r][ci.memo]||'').trim(), k:dkey_(dt) });
     }
   } catch(e){}
-  for (var k in m){ m[k].sort(function(a,b){ return (a.t||0)-(b.t||0); }); }
+  for (var kk in m){ m[kk].sort(function(a,b){ return (a.k||0)-(b.k||0); }); }
   return m;
 }
-function parseT_(s){ s=String(s||'').trim(); if(!s) return null; var t=(new Date(s.replace(/-/g,'/'))).getTime(); return isNaN(t)?null:t; }
 function isRecv_(k){ return k.indexOf('受領')===0 || k.indexOf('入荷')===0 || k.indexOf('入庫')===0; }
-function orderState_(evs, lead, lastRecvT){
+function orderState_(evs, lead, lastRecvKey){
   // 発注済み＝最後の発注が、最終受領(商品マスタLastReceived or 履歴の入庫)より後
   evs = evs || [];
-  var lastOrderT=null, lastOrderStr='', lastRecv=(lastRecvT||null);
+  var lastOrderK=null, lastOrderDt='', lastRecv=(lastRecvKey||null);
   for (var i=0;i<evs.length;i++){
     var k=evs[i].kind;
-    if (k.indexOf('発注')===0){ if(evs[i].t){ lastOrderT=evs[i].t; lastOrderStr=evs[i].dt; } }
-    else if (isRecv_(k)){ if(evs[i].t && (lastRecv===null || evs[i].t>lastRecv)) lastRecv=evs[i].t; }
+    if (k.indexOf('発注')===0){ if(evs[i].k){ lastOrderK=evs[i].k; lastOrderDt=evs[i].dt; } }
+    else if (isRecv_(k)){ if(evs[i].k && (lastRecv===null || evs[i].k>lastRecv)) lastRecv=evs[i].k; }
   }
-  var ordered = (lastOrderT!==null) && (lastRecv===null || lastOrderT>lastRecv);
+  var ordered = (lastOrderK!==null) && (lastRecv===null || lastOrderK>lastRecv);
   var eta='';
-  if (ordered && lead!==null && lastOrderT!==null){
-    // 発注日(JST)の年月日に納期日数を足す（タイムゾーンずれを避ける）
-    var ds=Utilities.formatDate(new Date(lastOrderT),'Asia/Tokyo','yyyy-MM-dd');
-    var m=ds.match(/(\d{4})-(\d{2})-(\d{2})/);
-    if (m){ var d=new Date(+m[1], +m[2]-1, +m[3]+Number(lead)); eta=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+  if (ordered && lead!==null){
+    var p=dparts_(lastOrderDt);
+    if (p){ var d=new Date(p.y, p.mo-1, p.d+Number(lead)); eta=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
   }
   var hist=[]; for (var j=Math.max(0,evs.length-8);j<evs.length;j++){ hist.push({dt:evs[j].dt,kind:evs[j].kind,qty:evs[j].qty,memo:evs[j].memo}); }
   hist.reverse();
@@ -51,7 +58,7 @@ function orderState_(evs, lead, lastRecvT){
 }
 
 function readAll_(){
-  var vals = sheet_().getDataRange().getValues();
+  var vals = sheet_().getDataRange().getDisplayValues();
   var head = vals[0];
   function gi(n){ return head.indexOf(n); }
   var ci = { id:gi('商品ID'), name:gi('商品名'), cat:gi('カテゴリー'), sup:gi('発注先'),
@@ -69,7 +76,7 @@ function readAll_(){
     var total = w + s;
     var status = (mn===null) ? '未設定' : (total<mn ? '不足' : (total===mn ? 'ギリギリ' : '十分'));
     var buy = String(row[ci.buy]||'').trim(); if (buy.toLowerCase().indexOf('http')!==0) buy='';
-    var os = orderState_(hm[id], lead, (ci.lr>=0?parseT_(row[ci.lr]):null));
+    var os = orderState_(hm[id], lead, (ci.lr>=0?dkey_(row[ci.lr]):null));
     items.push({ id:id, name:name, cat:(String(row[ci.cat]||'').trim()||'未分類'),
       sup:(String(row[ci.sup]||'').trim()||'未設定'),
       w:w, s:s, total:total, min:mn, status:status, lead:lead, lot:lot, buy:buy,
@@ -128,11 +135,10 @@ function doOrder_(p){
     rowObj['数量']=(p.qty!==undefined&&p.qty!=='')?p.qty:''; rowObj['担当者']='アプリ'; rowObj['メモ']=p.memo||'';
     var line = h.map(function(n){ return rowObj[n]!==undefined?rowObj[n]:''; });
     hs.appendRow(line);
-    // 納品予定の再計算用に納期・最終受領を取る
-    var sh=sheet_(); var f=findRow_(sh,p.id); var lead=null, lrt=null;
-    if (f){ var lc=f.head.indexOf('納期'); lead=num_(f.vals[f.row-1][lc]);
-            var orc=f.head.indexOf('LastReceived'); if(orc>=0) lrt=parseT_(f.vals[f.row-1][orc]); }
-    var os=orderState_(histMap_()[String(p.id).trim()], lead, lrt);
+    // 納品予定の再計算用に納期を取る（新規発注は必ず最終受領より後なので lastRecv=null でよい）
+    var sh=sheet_(); var f=findRow_(sh,p.id); var lead=null;
+    if (f){ var lc=f.head.indexOf('納期'); lead=num_(f.vals[f.row-1][lc]); }
+    var os=orderState_(histMap_()[String(p.id).trim()], lead, null);
     return { ok:true, id:p.id, ordered:os.ordered, oeta:os.oeta };
   } finally { lock.releaseLock(); }
 }
