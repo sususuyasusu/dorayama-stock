@@ -1,0 +1,191 @@
+// どら山 在庫ダッシュボード 書き込み/読み取り受け口（Google Apps Script Web App）
+// doGet 通常=全在庫をJSONPで返す。action= inc(±1) / set(値を設定) / order(発注記録) / receive(受領) / add(新規追加)
+var SHEET_ID = '14gFJiuVpuGT-GwDhGw-plVqbX5ulKY31g7fvRtwGJ8k';
+var SHEET_NAME = '商品マスタ';
+var HIST_NAME = '発注履歴';
+var TOKEN = 'dorayama-zaiko-2026';
+
+function sheet_(){ return SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME); }
+function hist_(){ return SpreadsheetApp.openById(SHEET_ID).getSheetByName(HIST_NAME); }
+function num_(x){ var n = Number(String(x).replace(/,/g,'').trim()); return isNaN(n) ? null : n; }
+function nowStr_(){ return Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy/MM/dd HH:mm:ss'); }
+
+// 商品ID -> 発注状態/納品予定/履歴 を発注履歴から作る
+function histMap_(){
+  var m = {};
+  try {
+    var v = hist_().getDataRange().getValues(); var h = v[0];
+    var ci = { dt:h.indexOf('日時'), id:h.indexOf('商品ID'), kind:h.indexOf('種別'), qty:h.indexOf('数量'), memo:h.indexOf('メモ') };
+    for (var r=1; r<v.length; r++){
+      var pid = String(v[r][ci.id]||'').trim(); if (!pid) continue;
+      (m[pid] = m[pid] || []).push({ dt:String(v[r][ci.dt]||'').trim(),
+        kind:String(v[r][ci.kind]||'発注').trim(), qty:String(v[r][ci.qty]||'').trim(),
+        memo:String(v[r][ci.memo]||'').trim(), t:(new Date(String(v[r][ci.dt]||'').replace(/-/g,'/'))).getTime() });
+    }
+  } catch(e){}
+  for (var k in m){ m[k].sort(function(a,b){ return (a.t||0)-(b.t||0); }); }
+  return m;
+}
+function parseT_(s){ s=String(s||'').trim(); if(!s) return null; var t=(new Date(s.replace(/-/g,'/'))).getTime(); return isNaN(t)?null:t; }
+function orderState_(evs, lead, lastRecvT){
+  // 発注済み＝最後の発注が、最終受領(商品マスタLastReceived or 履歴の受領)より後
+  evs = evs || [];
+  var lastOrder=null, lastRecv=(lastRecvT||null);
+  for (var i=0;i<evs.length;i++){
+    if (evs[i].kind.indexOf('発注')===0){ if(evs[i].t) lastOrder=evs[i].t; }
+    else if (evs[i].kind.indexOf('受領')===0 || evs[i].kind.indexOf('入荷')===0){ if(evs[i].t && (lastRecv===null || evs[i].t>lastRecv)) lastRecv=evs[i].t; }
+  }
+  var ordered = (lastOrder!==null) && (lastRecv===null || lastOrder>lastRecv);
+  var eta='';
+  if (ordered && lead!==null){
+    var d=new Date(lastOrder + Number(lead)*86400000);
+    if (!isNaN(d.getTime())) eta=Utilities.formatDate(d,'Asia/Tokyo','yyyy-MM-dd');
+  }
+  var hist=[]; for (var j=Math.max(0,evs.length-8);j<evs.length;j++){ hist.push({dt:evs[j].dt,kind:evs[j].kind,qty:evs[j].qty,memo:evs[j].memo}); }
+  hist.reverse();
+  return { ordered:ordered, oeta:eta, hist:hist };
+}
+
+function readAll_(){
+  var vals = sheet_().getDataRange().getValues();
+  var head = vals[0];
+  function gi(n){ return head.indexOf(n); }
+  var ci = { id:gi('商品ID'), name:gi('商品名'), cat:gi('カテゴリー'), sup:gi('発注先'),
+    w:gi('倉庫数量'), s:gi('店舗在庫'), mn:gi('最低在庫'), lead:gi('納期'), lot:gi('発注ロット'),
+    buy:gi('参考URL・連絡先'), lr:gi('LastReceived'), ship:gi('配送状況'), eta:gi('お届け予定'), exp:gi('賞味期限') };
+  var hm = histMap_();
+  var items = [];
+  for (var r=1; r<vals.length; r++){
+    var row = vals[r];
+    var name = String(row[ci.name]||'').trim();
+    if (!name) continue;
+    var id = String(row[ci.id]||'').trim();
+    var w = num_(row[ci.w]) || 0, s = num_(row[ci.s]) || 0, mn = num_(row[ci.mn]);
+    var lead = num_(row[ci.lead]), lot = num_(row[ci.lot]);
+    var total = w + s;
+    var status = (mn===null) ? '未設定' : (total<mn ? '不足' : (total===mn ? 'ギリギリ' : '十分'));
+    var buy = String(row[ci.buy]||'').trim(); if (buy.toLowerCase().indexOf('http')!==0) buy='';
+    var os = orderState_(hm[id], lead, (ci.lr>=0?parseT_(row[ci.lr]):null));
+    items.push({ id:id, name:name, cat:(String(row[ci.cat]||'').trim()||'未分類'),
+      sup:(String(row[ci.sup]||'').trim()||'未設定'),
+      w:w, s:s, total:total, min:mn, status:status, lead:lead, lot:lot, buy:buy,
+      ordered:os.ordered, oeta:os.oeta, hist:os.hist,
+      ship:String(row[ci.ship]||'').trim(), eta:String(row[ci.eta]||'').trim(), exp:String(row[ci.exp]||'').trim() });
+  }
+  return items;
+}
+
+function findRow_(sh, id){
+  var vals = sh.getDataRange().getValues(); var idCol = vals[0].indexOf('商品ID');
+  for (var r=1;r<vals.length;r++){ if (String(vals[r][idCol]).trim()===String(id).trim()) return {row:r+1, vals:vals, head:vals[0]}; }
+  return null;
+}
+
+function doInc_(p){
+  if (p.token !== TOKEN) return { ok:false, error:'auth' };
+  var field = (p.field==='w') ? '倉庫数量' : ((p.field==='s') ? '店舗在庫' : null);
+  if (!field) return { ok:false, error:'field' };
+  var delta = Number(p.delta);
+  if (!(delta===1 || delta===-1)) return { ok:false, error:'delta' };
+  var lock = LockService.getScriptLock(); lock.waitLock(8000);
+  try {
+    var sh = sheet_(); var f = findRow_(sh, p.id); if (!f) return { ok:false, error:'notfound' };
+    var fCol = f.head.indexOf(field);
+    var cur = Number(String(f.vals[f.row-1][fCol]).replace(/,/g,'')) || 0;
+    var nv = cur + delta; if (nv<0) nv=0;
+    sh.getRange(f.row, fCol+1).setValue(nv);
+    return { ok:true, id:p.id, field:p.field, value:nv };
+  } finally { lock.releaseLock(); }
+}
+
+// 絶対値を設定（最低在庫/納期/発注ロット/倉庫/店舗）
+function doSet_(p){
+  if (p.token !== TOKEN) return { ok:false, error:'auth' };
+  var map = { min:'最低在庫', lead:'納期', lot:'発注ロット', w:'倉庫数量', s:'店舗在庫' };
+  var field = map[p.field]; if (!field) return { ok:false, error:'field' };
+  var v = Number(String(p.value).replace(/,/g,'')); if (isNaN(v) || v<0) return { ok:false, error:'value' };
+  var lock = LockService.getScriptLock(); lock.waitLock(8000);
+  try {
+    var sh = sheet_(); var f = findRow_(sh, p.id); if (!f) return { ok:false, error:'notfound' };
+    var fCol = f.head.indexOf(field);
+    sh.getRange(f.row, fCol+1).setValue(v);
+    return { ok:true, id:p.id, field:p.field, value:v };
+  } finally { lock.releaseLock(); }
+}
+
+// 発注を記録（発注履歴に1行追加）
+function doOrder_(p){
+  if (p.token !== TOKEN) return { ok:false, error:'auth' };
+  var lock = LockService.getScriptLock(); lock.waitLock(8000);
+  try {
+    var hs = hist_(); var h = hs.getDataRange().getValues()[0];
+    var rowObj = {}; rowObj['記録ID']=Utilities.getUuid().substring(0,8); rowObj['日時']=nowStr_();
+    rowObj['商品ID']=String(p.id).trim(); rowObj['種別']='発注';
+    rowObj['数量']=(p.qty!==undefined&&p.qty!=='')?p.qty:''; rowObj['担当者']='アプリ'; rowObj['メモ']=p.memo||'';
+    var line = h.map(function(n){ return rowObj[n]!==undefined?rowObj[n]:''; });
+    hs.appendRow(line);
+    // 納品予定の再計算用に納期・最終受領を取る
+    var sh=sheet_(); var f=findRow_(sh,p.id); var lead=null, lrt=null;
+    if (f){ var lc=f.head.indexOf('納期'); lead=num_(f.vals[f.row-1][lc]);
+            var orc=f.head.indexOf('LastReceived'); if(orc>=0) lrt=parseT_(f.vals[f.row-1][orc]); }
+    var os=orderState_(histMap_()[String(p.id).trim()], lead, lrt);
+    return { ok:true, id:p.id, ordered:os.ordered, oeta:os.oeta };
+  } finally { lock.releaseLock(); }
+}
+
+// 受領を記録（発注履歴に1行追加。数量があれば倉庫数量に加算）
+function doReceive_(p){
+  if (p.token !== TOKEN) return { ok:false, error:'auth' };
+  var lock = LockService.getScriptLock(); lock.waitLock(8000);
+  try {
+    var hs = hist_(); var h = hs.getDataRange().getValues()[0];
+    var rowObj = {}; rowObj['記録ID']=Utilities.getUuid().substring(0,8); rowObj['日時']=nowStr_();
+    rowObj['商品ID']=String(p.id).trim(); rowObj['種別']='受領';
+    rowObj['数量']=(p.qty!==undefined&&p.qty!=='')?p.qty:''; rowObj['担当者']='アプリ'; rowObj['メモ']=p.memo||'';
+    hs.appendRow(h.map(function(n){ return rowObj[n]!==undefined?rowObj[n]:''; }));
+    var sh=sheet_(); var f=findRow_(sh,p.id); var nv=null;
+    var q=num_(p.qty);
+    if (f){
+      var orc=f.head.indexOf('LastReceived'); if(orc>=0) sh.getRange(f.row, orc+1).setValue(nowStr_());
+      if (q){ var wc=f.head.indexOf('倉庫数量'); var cur=Number(String(f.vals[f.row-1][wc]).replace(/,/g,''))||0; nv=cur+q; sh.getRange(f.row,wc+1).setValue(nv); }
+    }
+    return { ok:true, id:p.id, ordered:false, warehouse:nv };
+  } finally { lock.releaseLock(); }
+}
+
+// 新規商品を追加（商品ID自動採番 P0xx）
+function doAdd_(p){
+  if (p.token !== TOKEN) return { ok:false, error:'auth' };
+  if (!String(p.name||'').trim()) return { ok:false, error:'name' };
+  var lock = LockService.getScriptLock(); lock.waitLock(8000);
+  try {
+    var sh=sheet_(); var vals=sh.getDataRange().getValues(); var head=vals[0];
+    var idCol=head.indexOf('商品ID'); var mx=0;
+    for (var r=1;r<vals.length;r++){ var m=String(vals[r][idCol]||'').match(/^P(\d+)$/); if (m){ var n=parseInt(m[1],10); if(n>mx)mx=n; } }
+    var nid='P'+('000'+(mx+1)).slice(-3);
+    var o={}; o['商品ID']=nid; o['商品名']=String(p.name).trim(); o['カテゴリー']=p.cat||'未分類';
+    o['発注先']=p.sup||'その他';
+    if (p.w!==undefined&&p.w!=='') o['倉庫数量']=num_(p.w)||0;
+    if (p.s!==undefined&&p.s!=='') o['店舗在庫']=num_(p.s)||0;
+    if (p.min!==undefined&&p.min!=='') o['最低在庫']=num_(p.min);
+    if (p.lead!==undefined&&p.lead!=='') o['納期']=num_(p.lead);
+    if (p.lot!==undefined&&p.lot!=='') o['発注ロット']=num_(p.lot);
+    sh.appendRow(head.map(function(n){ return o[n]!==undefined?o[n]:''; }));
+    return { ok:true, id:nid, name:o['商品名'] };
+  } finally { lock.releaseLock(); }
+}
+
+function doGet(e){
+  var out; var a = e.parameter.action;
+  try {
+    if (a==='inc') out=doInc_(e.parameter);
+    else if (a==='set') out=doSet_(e.parameter);
+    else if (a==='order') out=doOrder_(e.parameter);
+    else if (a==='receive') out=doReceive_(e.parameter);
+    else if (a==='add') out=doAdd_(e.parameter);
+    else out={ ok:true, updated:Utilities.formatDate(new Date(),'Asia/Tokyo','yyyy-MM-dd HH:mm'), items:readAll_() };
+  } catch(err){ out={ ok:false, error:String(err) }; }
+  var txt=JSON.stringify(out); var cb=e.parameter.callback;
+  if (cb) return ContentService.createTextOutput(cb+'('+txt+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+  return ContentService.createTextOutput(txt).setMimeType(ContentService.MimeType.JSON);
+}
