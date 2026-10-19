@@ -64,7 +64,7 @@ function readAll_(){
   var ci = { id:gi('商品ID'), name:gi('商品名'), cat:gi('カテゴリー'), sup:gi('発注先'), freq:gi('発注頻度'),
     w:gi('倉庫数量'), s:gi('店舗在庫'), mn:gi('最低在庫'), lead:gi('納期'), lot:gi('発注ロット'),
     ref:gi('参考URL・連絡先'), lr:gi('LastReceived'), ship:gi('配送状況'), eta:gi('お届け予定'),
-    exp:gi('賞味期限'), stk:gi('棚卸数'), batch:gi('ロット'), memo:gi('備考'), shipmemo:gi('配送メモ'), price:gi('単価') };
+    exp:gi('賞味期限'), stk:gi('棚卸数'), batch:gi('ロット'), memo:gi('備考'), shipmemo:gi('配送メモ'), price:gi('単価'), imgurl:gi('画像URL') };
   var hm = histMap_();
   var items = [];
   for (var r=1; r<vals.length; r++){
@@ -86,7 +86,8 @@ function readAll_(){
       ship:String(row[ci.ship]||'').trim(), eta:String(row[ci.eta]||'').trim(), exp:String(row[ci.exp]||'').trim(),
       memo:(ci.memo>=0?String(row[ci.memo]||'').trim():''), shipmemo:(ci.shipmemo>=0?String(row[ci.shipmemo]||'').trim():''),
       stk:(ci.stk>=0?num_(row[ci.stk]):null), batch:(ci.batch>=0?String(row[ci.batch]||'').trim():''),
-      price:(ci.price>=0?num_(row[ci.price]):null) });
+      price:(ci.price>=0?num_(row[ci.price]):null),
+      img:(ci.imgurl>=0 && /^https?:\/\//i.test(String(row[ci.imgurl]||'').trim()) ? String(row[ci.imgurl]).trim() : '') });
   }
   return items;
 }
@@ -234,6 +235,66 @@ function listCheckHist_(n){
   return out;
 }
 
+// ===== チェックリストの完了状態（全端末で共有・当日ぶん） =====
+var CHKSTATE_NAME = 'チェック状態';
+function chkStateSheet_(){
+  var ss = SpreadsheetApp.openById(SHEET_ID); var sh = ss.getSheetByName(CHKSTATE_NAME);
+  if (!sh){ sh = ss.insertSheet(CHKSTATE_NAME); sh.appendRow(['日付','商品ID','確認者','時刻']); }
+  return sh;
+}
+function todayStr_(){ return Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy-MM-dd'); }
+function checkedToday_(){
+  var sh = chkStateSheet_(); var v = sh.getDataRange().getDisplayValues(); var t = todayStr_(); var seen = {}, res = [];
+  for (var r=1; r<v.length; r++){ if (String(v[r][0]).trim()===t){ var id=String(v[r][1]).trim(); if (id && !seen[id]){ seen[id]=1; res.push(id); } } }
+  return res;
+}
+function doChkSet_(p){
+  if (p.token !== TOKEN) return { ok:false, error:'auth' };
+  var id = String(p.id||'').trim(); if (!id) return { ok:false, error:'id' };
+  var on = (String(p.on)==='1' || String(p.on)==='true'); var t = todayStr_();
+  var lock = LockService.getScriptLock(); lock.waitLock(10000);
+  try {
+    var sh = chkStateSheet_(); var v = sh.getDataRange().getValues();
+    if (on){ var exists=false; for (var r=1;r<v.length;r++){ if (String(v[r][0]).trim()===t && String(v[r][1]).trim()===id){ exists=true; break; } }
+      if (!exists) sh.appendRow([t, id, String(p.name||''), nowStr_()]); }
+    else { for (var r=v.length-1; r>=1; r--){ if (String(v[r][0]).trim()===t && String(v[r][1]).trim()===id) sh.deleteRow(r+1); } }
+    return { ok:true };
+  } finally { lock.releaseLock(); }
+}
+
+// ===== 商品写真のアップロード（端末の写真→ドライブ→画像URL列） =====
+function imgFolder_(){
+  var name = 'dorayama-stock-img';
+  var it = DriveApp.getFoldersByName(name);
+  return it.hasNext() ? it.next() : DriveApp.createFolder(name);
+}
+function doImg_(p){
+  if (p.token !== TOKEN) return { ok:false, error:'auth' };
+  var id = String(p.id||'').trim(); if (!id) return { ok:false, error:'id' };
+  var data = String(p.data||''); var m = data.match(/^data:(image\/[\w.+-]+);base64,([\s\S]+)$/);
+  if (!m) return { ok:false, error:'data' };
+  var lock = LockService.getScriptLock(); lock.waitLock(25000);
+  try {
+    var blob = Utilities.newBlob(Utilities.base64Decode(m[2]), m[1], id+'_'+Date.now()+'.jpg');
+    var file = imgFolder_().createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    var url = 'https://drive.google.com/thumbnail?id='+file.getId()+'&sz=w900';
+    var sh = sheet_(); var f = findRow_(sh, id);
+    if (f){ var c = f.head.indexOf('画像URL'); if (c<0){ c = f.head.length; sh.getRange(1, c+1).setValue('画像URL'); }
+      sh.getRange(f.row, c+1).setValue(url); }
+    return { ok:true, url:url };
+  } finally { lock.releaseLock(); }
+}
+function doPost(e){
+  var out;
+  try {
+    var p = JSON.parse((e && e.postData && e.postData.contents) || '{}');
+    if (p.action==='img') out = doImg_(p);
+    else out = { ok:false, error:'action' };
+  } catch(err){ out = { ok:false, error:String(err) }; }
+  return ContentService.createTextOutput(JSON.stringify(out)).setMimeType(ContentService.MimeType.JSON);
+}
+
 function doGet(e){
   var out; var a = e.parameter.action;
   try {
@@ -245,7 +306,8 @@ function doGet(e){
     else if (a==='delete') out=doDelete_(e.parameter);
     else if (a==='submitcheck') out=doSubmitCheck_(e.parameter);
     else if (a==='checkhist') out={ ok:true, hist:listCheckHist_(60) };
-    else out={ ok:true, updated:Utilities.formatDate(new Date(),'Asia/Tokyo','yyyy-MM-dd HH:mm'), items:readAll_() };
+    else if (a==='chkset') out=doChkSet_(e.parameter);
+    else out={ ok:true, updated:Utilities.formatDate(new Date(),'Asia/Tokyo','yyyy-MM-dd HH:mm'), items:readAll_(), checked:checkedToday_() };
   } catch(err){ out={ ok:false, error:String(err) }; }
   var txt=JSON.stringify(out); var cb=e.parameter.callback;
   if (cb) return ContentService.createTextOutput(cb+'('+txt+')').setMimeType(ContentService.MimeType.JAVASCRIPT);

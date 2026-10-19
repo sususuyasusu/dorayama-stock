@@ -287,13 +287,14 @@
 <div class="modal" id="detail"><div class="sheet" id="detailBody"></div></div>
 <div class="modal" id="addm"><div class="sheet" id="addBody"></div></div>
 <div class="modal" id="histm"><div class="sheet" id="histBody"></div></div>
+<input type="file" id="imgfile" accept="image/*" style="display:none" onchange="onImgPick(this)">
 <div class="lbox" id="lbox" onclick="closePhoto()"><img id="lboxImg" src="" alt="商品写真"></div>
 <div id="toast"></div>
 
 <script>
 var TOKEN = "dorayama-zaiko-2026";
 var STATE = { tab:"要発注", cat:"すべて", sup:"すべて", group:null, q:"" };
-var DATA = null, GAS_URL = "", IMG_BY_ID = {}, PRICE_BY_ID = {}, OPEN_ID = null;
+var DATA = null, GAS_URL = "", IMG_BY_ID = {}, PRICE_BY_ID = {}, CHECKED = {}, LAST_ACT = 0, OPEN_ID = null;
 
 function fmt(n){ if(n==null) return "—"; n=Math.round(n*10)/10; return (""+n).replace(/\B(?=(\d{3})+(?!\d))/g,","); }
 function esc(s){ return (""+(s==null?"":s)).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
@@ -460,12 +461,13 @@ function freqDueToday(f){ f=String(f||"").trim(); if(f==="毎日") return true;
   if(f==="週一(日)") return (d===0);
   return false; }
 // チェックリスト＝発注確認頻度ごとのチェックリスト。✓は当日ぶんをこの端末に保存し翌日リセット。
-function chkKey(){ var d=new Date(); return 'dchk:'+d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
-function chkGet(){ try{ return JSON.parse(localStorage.getItem(chkKey())||'{}')||{}; }catch(e){ return {}; } }
-function chkIs(id){ return !!chkGet()[String(id)]; }
-function chkToggle(id){ id=String(id); var c=chkGet(); if(c[id]) delete c[id]; else c[id]=1;
-  try{ localStorage.setItem(chkKey(), JSON.stringify(c)); }catch(e){}
-  var y=window.scrollY||window.pageYOffset||0; render(); window.scrollTo(0,y); }
+// 完了状態は全端末で共有（GASの「チェック状態」シート・当日ぶん）。CHECKEDは読み込み時に同期。
+function chkIs(id){ return !!CHECKED[String(id)]; }
+function chkToggle(id){ id=String(id); LAST_ACT=Date.now();
+  if(!GAS_URL){ toast('保存はMacで1回承認後に有効になります'); return; }
+  var on=!CHECKED[id]; if(on) CHECKED[id]=1; else delete CHECKED[id];
+  var y=window.scrollY||window.pageYOffset||0; render(); window.scrollTo(0,y);
+  gasJsonp({action:'chkset',id:id,on:on?1:0,name:(getChkName()||'')},function(resp){ if(!(resp&&resp.ok)) toast('同期に失敗しました（通信をご確認ください）'); }); }
 function chkRowEl(it,c){
   var done=chkIs(it.id);
   var row=document.createElement('div'); row.className="crow "+c.lead+(done?" done":"");
@@ -745,7 +747,7 @@ function renderDetail(id){
 
   document.getElementById('detailBody').innerHTML=
      '<div class="shead">'+thumb+'<div class="nm">'+esc(it.name)+' '+ord+'</div><button class="x" onclick="closeDetail()">✕</button></div>'
-    +(openLink?('<div class="acts">'+openLink+'</div>'):'')
+    +'<div class="acts"><button class="pbtn o" onclick="pickImg(\''+it.id+'\')">📷 写真を追加・変更</button>'+openLink+'</div>'
     +edTextRow(it.id,"name","商品名",it.name,"")
     +'<div class="frow"><span class="k">商品ID</span><span class="idv">'+esc(it.id)+'</span></div>'
     +selRow(it.id,"cat","カテゴリー",it.cat,catOpts)
@@ -818,6 +820,45 @@ function submitAdd(){
 }
 
 function reloadLive(){ if(!GAS_URL) return; gasLoad(function(live){ if(live&&live.items&&live.items.length){ applyData(live); if(OPEN_ID) renderDetail(OPEN_ID); } }); }
+// 全端末同期：一定間隔で最新データを取り込む（操作中・画面を開いている間は見送り、スクロール位置は維持）
+function anyModalOpen(){
+  var ms=['detail','addm','histm'];
+  for(var i=0;i<ms.length;i++){ var m=document.getElementById(ms[i]); if(m && String(m.className).indexOf('show')>=0) return true; }
+  var lb=document.getElementById('lbox'); if(lb && lb.style.display==='flex') return true;
+  return false;
+}
+function autoRefresh(){
+  if(!GAS_URL || document.hidden) return;
+  if(Date.now()-LAST_ACT < 7000) return;
+  if(anyModalOpen()) return;
+  var y=window.scrollY||window.pageYOffset||0;
+  gasLoad(function(live){ if(live && live.items && live.items.length){ applyData(live); window.scrollTo(0,y); } });
+}
+// 端末の写真を選ぶ→縮小→アップロード→ドライブ保存→再読込で表示
+function pickImg(id){ OPEN_ID=id; var f=document.getElementById('imgfile'); if(f){ f.value=''; f.click(); } }
+function onImgPick(inp){
+  var file=inp.files&&inp.files[0]; if(!file) return;
+  if(!GAS_URL){ toast('保存はMacで1回承認後に有効になります'); return; }
+  var id=OPEN_ID;
+  var rd=new FileReader();
+  rd.onload=function(ev){ var im=new Image();
+    im.onload=function(){ var mx=900, w=im.width, h=im.height;
+      if(w>mx||h>mx){ if(w>=h){ h=Math.round(h*mx/w); w=mx; } else { w=Math.round(w*mx/h); h=mx; } }
+      var cv=document.createElement('canvas'); cv.width=w; cv.height=h; cv.getContext('2d').drawImage(im,0,0,w,h);
+      var b64; try{ b64=cv.toDataURL('image/jpeg',0.82); }catch(e){ toast('画像を処理できませんでした'); return; }
+      uploadImg(id,b64); };
+    im.onerror=function(){ toast('画像を読み込めませんでした'); };
+    im.src=ev.target.result; };
+  rd.onerror=function(){ toast('画像を読み込めませんでした'); };
+  rd.readAsDataURL(file);
+}
+function uploadImg(id,b64){
+  toast('写真をアップロード中…');
+  fetch(GAS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:JSON.stringify({action:'img',id:id,token:TOKEN,data:b64})})
+  .then(function(){ setTimeout(function(){ reloadLive(); toast('写真を更新しました'); }, 4500); })
+  .catch(function(){ setTimeout(function(){ reloadLive(); toast('写真を更新しました'); }, 4500); });
+}
 
 function gasLoad(cb){
   if(!GAS_URL){ cb(null); return; }
@@ -838,10 +879,15 @@ function applyData(d){
     if(it.price!=null && it.price!==""){ PRICE_BY_ID[it.id]=Number(it.price); it.price=Number(it.price); }
     else if(PRICE_BY_ID[it.id]!=null){ it.price=PRICE_BY_ID[it.id]; }
   }); }
+  if(d && d.checked){ CHECKED={}; d.checked.forEach(function(x){ CHECKED[String(x)]=1; }); }
   DATA=d; document.getElementById('upd').textContent=d.updated||""; render();
 }
 
 function boot(){
+  document.addEventListener('pointerdown',function(){ LAST_ACT=Date.now(); }, true);
+  document.addEventListener('input',function(){ LAST_ACT=Date.now(); }, true);
+  setInterval(autoRefresh, 20000);   // 20秒ごとに全端末同期
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden) autoRefresh(); });
   document.getElementById('q').addEventListener('input',function(e){STATE.q=e.target.value;render();});
   var nb=document.getElementById('nav').children;
   for(var i=0;i<nb.length;i++){ (function(t){ t.onclick=function(){ if(t.className.indexOf('off')>=0) return; STATE.tab=t.getAttribute('data-tab'); STATE.group=null; render(); }; })(nb[i]); }
