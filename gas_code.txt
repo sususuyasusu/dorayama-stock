@@ -207,6 +207,33 @@ function doDelete_(p){
   } finally { lock.releaseLock(); }
 }
 
+// ===== チェックリストの提出・履歴 =====
+var HISTCHK_NAME = 'チェック履歴';
+function histChkSheet_(){
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var sh = ss.getSheetByName(HISTCHK_NAME);
+  if (!sh){ sh = ss.insertSheet(HISTCHK_NAME);
+    sh.appendRow(['日時','確認者','曜日','対象頻度','完了数','全数','未完了品目']); }
+  return sh;
+}
+function doSubmitCheck_(p){
+  if (p.token !== TOKEN) return { ok:false, error:'auth' };
+  var name = String(p.name||'').trim(); if (!name) return { ok:false, error:'name' };
+  var lock = LockService.getScriptLock(); lock.waitLock(8000);
+  try {
+    histChkSheet_().appendRow([ nowStr_(), name, String(p.weekday||''), String(p.scope||''),
+      Number(p.done||0), Number(p.total||0), String(p.undone||'') ]);
+    return { ok:true };
+  } finally { lock.releaseLock(); }
+}
+function listCheckHist_(n){
+  var sh = histChkSheet_(); var v = sh.getDataRange().getDisplayValues(); var out = [];
+  for (var r=v.length-1; r>=1 && out.length<(n||60); r--){ var row=v[r];
+    if (!String(row[0]||'').trim()) continue;
+    out.push({ dt:row[0], name:row[1], wd:row[2], scope:row[3], done:row[4], total:row[5], undone:row[6] }); }
+  return out;
+}
+
 function doGet(e){
   var out; var a = e.parameter.action;
   try {
@@ -216,6 +243,8 @@ function doGet(e){
     else if (a==='receive') out=doReceive_(e.parameter);
     else if (a==='add') out=doAdd_(e.parameter);
     else if (a==='delete') out=doDelete_(e.parameter);
+    else if (a==='submitcheck') out=doSubmitCheck_(e.parameter);
+    else if (a==='checkhist') out={ ok:true, hist:listCheckHist_(60) };
     else out={ ok:true, updated:Utilities.formatDate(new Date(),'Asia/Tokyo','yyyy-MM-dd HH:mm'), items:readAll_() };
   } catch(err){ out={ ok:false, error:String(err) }; }
   var txt=JSON.stringify(out); var cb=e.parameter.callback;
