@@ -319,3 +319,7 @@ function doGet(e){
   if (cb) return ContentService.createTextOutput(cb+'('+txt+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
   return ContentService.createTextOutput(txt).setMimeType(ContentService.MimeType.JSON);
 }
+
+// 写真アップロード用のドライブ権限を1回だけ本人に承認してもらうための関数。
+// エディタでこの関数を選んで実行→権限を確認→許可、で以後アップロードが使えるようになる。
+function authDrive(){ return imgFolder_().getName(); }
