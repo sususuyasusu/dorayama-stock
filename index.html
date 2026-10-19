@@ -122,11 +122,26 @@
   .obtn.order:active,.obtn.recv:active{filter:brightness(.92);background:var(--coral)}
   .sup-tag{background:var(--blue-bg);color:var(--blue);border-radius:6px;padding:1px 7px;font-weight:700;font-size:11px}
   /* 毎日チェックのチェックリスト */
-  .cbox{grid-row:1 / span 2;align-self:center;width:34px;height:34px;border-radius:10px;border:2px solid var(--track-br);background:var(--card);color:var(--green);font-size:19px;font-weight:800;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;flex:none}
-  .cbox:active{transform:scale(.92)}
-  .crow.done{opacity:.52}
-  .crow.done .cbox{background:var(--green);color:#fff;border-color:var(--green)}
+  .crow{background:var(--card);border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow);padding:10px 13px}
+  .crow.lead-red{border-left:4px solid var(--red)} .crow.lead-amber{border-left:4px solid var(--amber)}
+  .crow.lead-blue{border-left:4px solid var(--blue)} .crow.lead-green{border-left:4px solid var(--green)}
+  .crow .chead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+  .crow .note{text-align:right;min-width:88px}
+  .donebtn{border:none;border-radius:999px;background:var(--green);color:#fff;font-size:13px;font-weight:800;padding:8px 18px;cursor:pointer;-webkit-tap-highlight-color:transparent;margin-left:auto;white-space:nowrap}
+  .donebtn:active{transform:scale(.96)}
+  .donebtn.undo{background:var(--card);color:var(--sub);border:1px solid var(--line)}
+  .crow.done{background:var(--gray-bg)}
   .crow.done .cname{text-decoration:line-through;color:var(--sub)}
+  .crow.done .meta,.crow.done .note{opacity:.55}
+  .crow.done .edit .btn{pointer-events:none;opacity:.38}
+  .crow.done .edit .stepper .val,.crow.done .edit .minlbl{color:var(--sub)}
+  /* 当日の完了カウンター */
+  .chkprog{background:var(--card);border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow);padding:11px 14px;margin:2px 0 9px}
+  .chkprog .cptop{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px}
+  .chkprog .cplb{font-size:12.5px;font-weight:800;color:var(--ink)}
+  .chkprog .cpnum{font-size:16px;font-weight:800;color:var(--green);font-variant-numeric:tabular-nums}
+  .chkprog .cpbar{height:9px;background:var(--track);border:1px solid var(--track-br);border-radius:6px;overflow:hidden}
+  .chkprog .cpfill{height:100%;background:var(--green);border-radius:5px;transition:width .25s}
 
   /* 棚卸の行 */
   .srow{background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:11px 13px}
@@ -249,7 +264,7 @@
 
 <nav class="nav" id="nav">
   <button class="navbtn" data-tab="要発注"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 10.2v3.1c0 1.7.8 2.8 1.9 3.8H4.6c1.1-1 1.9-2.1 1.9-3.8v-3.1a5.5 5.5 0 0 1 9-4.2"/><path d="M10 20h4"/><circle cx="18.4" cy="5.3" r="2.3" fill="currentColor" stroke="none"/></svg><span class="navbadge" id="nbadge" style="display:none">0</span></span>要発注リスト</button>
-  <button class="navbtn" data-tab="毎日"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="16" rx="2.7"/><path d="M7.6 2.9v3.2M16.4 2.9v3.2M3.5 9.2h17"/><path d="m8.3 15 2.7 2.5 4.8-5"/></svg></span>毎日チェック</button>
+  <button class="navbtn" data-tab="毎日"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="16" rx="2.7"/><path d="M7.6 2.9v3.2M16.4 2.9v3.2M3.5 9.2h17"/><path d="m8.3 15 2.7 2.5 4.8-5"/></svg></span>チェックリスト</button>
   <button class="navbtn" data-tab="商品"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2.7 8.2 4.5v9.4L12 21.2l-8.2-4.6V7.2L12 2.7Z"/><path d="m3.8 7.2 8.2 4.6 8.2-4.6M12 11.8v9.4M8 4.9l8.3 4.5v3.3"/></svg></span>商品一覧</button>
   <button class="navbtn" data-tab="発注先"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 9.4 12 4l8.5 5.4v10.8h-17V9.4Z"/><path d="M3.5 9.5h17M8 20.2v-6.8h8v6.8M8 16.9h8"/><path d="M7 11.5h.01M12 11.5h.01M17 11.5h.01" stroke-width="2.8"/></svg></span>発注先別</button>
 </nav>
@@ -315,8 +330,8 @@ function render(){
 
   // コントロールの出し分け
   var showHero=(tab==="要発注");
-  var showChips=(tab==="商品");
-  var showSup=(tab==="要発注"||tab==="商品");
+  var showChips=(tab==="商品"||tab==="毎日");
+  var showSup=(tab==="要発注"||tab==="商品"||tab==="毎日");
   var showControls=true;
   var showSearch=true;
   document.getElementById('hero').className="hero"+(showHero?"":" hide");
@@ -366,7 +381,7 @@ function render(){
     if(q && x.it.name.indexOf(q)<0) return false;
     if(showSup && STATE.sup!=="すべて" && x.it.sup!==STATE.sup) return false;
     if(showChips && STATE.cat!=="すべて" && x.it.cat!==STATE.cat) return false;
-    if(tab==="毎日" && ["毎日","月・水・金","週一(日)"].indexOf(String(x.it.freq||"").trim())<0) return false;   // 毎日チェック＝発注確認頻度が設定された品
+    if(tab==="毎日" && !freqDueToday(x.it.freq)) return false;   // チェックリスト＝今日に確認する頻度の品だけ（曜日自動判定）
     if(tab==="要発注"){
       if(STATE.group) return x.c.gk===STATE.group;
       return x.c.gk!=="十分";               // 要発注リスト＝対応が要る品だけ
@@ -388,6 +403,14 @@ function render(){
 
   list.innerHTML="";
   if(!rows.length){ list.innerHTML='<div class="empty">該当する品目はありません</div>'; return; }
+  if(tab==="毎日"){
+    var dnAll=rows.filter(function(x){return chkIs(x.it.id);}).length, totAll=rows.length;
+    var pctAll=totAll?Math.round(dnAll/totAll*100):0;
+    var cp=document.createElement('div'); cp.className="chkprog";
+    cp.innerHTML='<div class="cptop"><span class="cplb">今日の確認</span><span class="cpnum">'+dnAll+' / '+totAll+' 完了</span></div>'+
+      '<div class="cpbar"><div class="cpfill" style="width:'+pctAll+'%"></div></div>';
+    list.appendChild(cp);
+  }
   if(tab==="商品"){
     var invTot=0, priced=0;
     rows.forEach(function(x){ if(x.it.price!=null && x.it.price!==""){ invTot += (x.it.w+x.it.s)*Number(x.it.price); priced++; } });
@@ -403,7 +426,9 @@ function render(){
       if(gk!==lastGrp){ lastGrp=gk;
         var cnt=rows.filter(function(y){ return groupKey(y)===gk; }).length;
         var g=document.createElement('div'); g.className="grp";
-        g.innerHTML='<span>'+esc(gk)+'</span><span class="cnt">'+cnt+'</span><span class="ln"></span>';
+        var cntHtml=''+cnt;
+        if(tab==="毎日"){ var dn=rows.filter(function(y){ return groupKey(y)===gk && chkIs(y.it.id); }).length; cntHtml=dn+' / '+cnt; }
+        g.innerHTML='<span>'+esc(gk)+'</span><span class="cnt">'+cntHtml+'</span><span class="ln"></span>';
         list.appendChild(g);
       }
     }
@@ -411,25 +436,31 @@ function render(){
   });
 }
 
-// 毎日チェック＝発注確認頻度ごとのチェックリスト。✓は当日ぶんをこの端末に保存し翌日リセット。
+// 今日に確認すべき発注確認頻度か（曜日で自動判定）。毎日=常に／月・水・金=月水金／週一(日)=日曜。
+function freqDueToday(f){ f=String(f||"").trim(); if(f==="毎日") return true;
+  var d=new Date().getDay();   // 0=日 1=月 2=火 3=水 4=木 5=金 6=土
+  if(f==="月・水・金") return (d===1||d===3||d===5);
+  if(f==="週一(日)") return (d===0);
+  return false; }
+// チェックリスト＝発注確認頻度ごとのチェックリスト。✓は当日ぶんをこの端末に保存し翌日リセット。
 function chkKey(){ var d=new Date(); return 'dchk:'+d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
 function chkGet(){ try{ return JSON.parse(localStorage.getItem(chkKey())||'{}')||{}; }catch(e){ return {}; } }
 function chkIs(id){ return !!chkGet()[String(id)]; }
-function chkToggle(id,btn){ id=String(id); var c=chkGet(); if(c[id]) delete c[id]; else c[id]=1;
+function chkToggle(id){ id=String(id); var c=chkGet(); if(c[id]) delete c[id]; else c[id]=1;
   try{ localStorage.setItem(chkKey(), JSON.stringify(c)); }catch(e){}
-  var on=!!c[id]; var row=btn.parentNode; while(row && String(row.className).indexOf('crow')<0) row=row.parentNode;
-  if(row){ row.className='crow row '+(row.getAttribute('data-lead')||'')+(on?' done':''); btn.textContent=on?'✓':''; } }
+  var y=window.scrollY||window.pageYOffset||0; render(); window.scrollTo(0,y); }
 function chkRowEl(it,c){
   var done=chkIs(it.id);
-  var row=document.createElement('div'); row.className="crow row "+c.lead+(done?" done":"");
-  row.setAttribute('data-id',it.id); row.setAttribute('data-lead',c.lead);
+  var row=document.createElement('div'); row.className="crow "+c.lead+(done?" done":"");
+  row.setAttribute('data-id',it.id);
   var nsub=c.sub?'<div class="nsub">'+c.sub+'</div>':'';
+  var btn=done ? '<button class="donebtn undo" onclick="chkToggle(\''+it.id+'\')">未完了</button>'
+               : '<button class="donebtn" onclick="chkToggle(\''+it.id+'\')">✓ 完了</button>';
   row.innerHTML=
-    '<button class="cbox" onclick="chkToggle(\''+it.id+'\',this)">'+(done?'✓':'')+'</button>'+
-    '<div style="min-width:0"><div class="name tap cname" onclick="openDetail(\''+it.id+'\')">'+esc(it.name)+'<span class="chev">›</span></div>'+
+    '<div class="chead"><div style="min-width:0"><div class="name tap cname" onclick="openDetail(\''+it.id+'\')">'+esc(it.name)+'<span class="chev">›</span></div>'+
       '<div class="meta"><span class="tag">'+esc(it.cat)+'</span><span class="sup-tag">'+esc(it.sup||'未設定')+'</span></div></div>'+
-    '<div class="note"><span class="badge '+c.badgeCls+'">'+c.badge+'</span>'+nsub+'</div>'+
-    '<div class="edit">'+stepperHtml(it.id,"w","倉庫",it.w)+stepperHtml(it.id,"s","店舗",it.s)+'<span class="minlbl">最低 <b>'+(it.min!=null?fmt(it.min):"—")+'</b></span></div>';
+      '<div class="note"><span class="badge '+c.badgeCls+'">'+c.badge+'</span>'+nsub+'</div></div>'+
+    '<div class="edit">'+stepperHtml(it.id,"w","倉庫",it.w)+stepperHtml(it.id,"s","店舗",it.s)+'<span class="minlbl">最低 <b>'+(it.min!=null?fmt(it.min):"—")+'</b></span>'+btn+'</div>';
   return row;
 }
 function rowEl(it,c){
