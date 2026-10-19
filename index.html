@@ -360,6 +360,7 @@ function render(){
     if(q && x.it.name.indexOf(q)<0) return false;
     if(showSup && STATE.sup!=="すべて" && x.it.sup!==STATE.sup) return false;
     if(showChips && STATE.cat!=="すべて" && x.it.cat!==STATE.cat) return false;
+    if(tab==="毎日" && String(x.it.freq||"").trim()!=="多") return false;   // 毎日チェック＝発注頻度「多」のみ
     if(tab==="要発注"){
       if(STATE.group) return x.c.gk===STATE.group;
       return x.c.gk!=="十分";               // 要発注リスト＝対応が要る品だけ
