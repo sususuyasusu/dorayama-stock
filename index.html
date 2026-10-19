@@ -282,7 +282,6 @@
   <button class="navbtn" data-tab="要発注"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 10.2v3.1c0 1.7.8 2.8 1.9 3.8H4.6c1.1-1 1.9-2.1 1.9-3.8v-3.1a5.5 5.5 0 0 1 9-4.2"/><path d="M10 20h4"/><circle cx="18.4" cy="5.3" r="2.3" fill="currentColor" stroke="none"/></svg><span class="navbadge" id="nbadge" style="display:none">0</span></span>要発注リスト</button>
   <button class="navbtn" data-tab="毎日"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="16" rx="2.7"/><path d="M7.6 2.9v3.2M16.4 2.9v3.2M3.5 9.2h17"/><path d="m8.3 15 2.7 2.5 4.8-5"/></svg></span>チェックリスト</button>
   <button class="navbtn" data-tab="商品"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2.7 8.2 4.5v9.4L12 21.2l-8.2-4.6V7.2L12 2.7Z"/><path d="m3.8 7.2 8.2 4.6 8.2-4.6M12 11.8v9.4M8 4.9l8.3 4.5v3.3"/></svg></span>商品一覧</button>
-  <button class="navbtn" data-tab="発注先"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 9.4 12 4l8.5 5.4v10.8h-17V9.4Z"/><path d="M3.5 9.5h17M8 20.2v-6.8h8v6.8M8 16.9h8"/><path d="M7 11.5h.01M12 11.5h.01M17 11.5h.01" stroke-width="2.8"/></svg></span>発注先別</button>
 </nav>
 
 <div class="modal" id="detail"><div class="sheet" id="detailBody"></div></div>
@@ -357,7 +356,7 @@ function render(){
   document.getElementById('supwrap').className="selwrap"+(showSup?"":" hide");
   document.querySelector('.search').style.display=showSearch?"":"none";
   document.getElementById('fab').className="fab"+((tab==="毎日")?" hide":"");
-  document.getElementById('foot').style.display=(tab==="要発注"||tab==="商品"||tab==="発注先")?"":"none";
+  document.getElementById('foot').style.display=(tab==="要発注"||tab==="商品")?"":"none";
 
   var list=document.getElementById('list');
 
@@ -410,8 +409,6 @@ function render(){
   var groupKey=null;   // null＝グループ無し（毎日チェックは全品フラット・並び順そのまま）
   if(tab==="要発注"){ groupKey=function(x){ return x.c.gk==="到着待ち"?"発注済み":"未発注"; };
     rows.sort(function(a,b){ var ga=(a.c.gk==="到着待ち")?1:0, gb=(b.c.gk==="到着待ち")?1:0; if(ga!==gb)return ga-gb; return a.c.pri-b.c.pri; }); }
-  else if(tab==="発注先"){ groupKey=function(x){ return x.it.sup||"未設定"; };
-    rows.sort(function(a,b){ var sa=a.it.sup||"", sb=b.it.sup||""; if(sa!==sb)return sa<sb?-1:1; return a.c.pri-b.c.pri; }); }
   else if(tab==="毎日"){ var FO={"毎日":0,"月・水・金":1,"週一(日)":2};   // 発注確認頻度でグループ分け
     groupKey=function(x){ return String(x.it.freq||"").trim()||"その他"; };
     rows.sort(function(a,b){ var fa=FO[String(a.it.freq||"").trim()], fb=FO[String(b.it.freq||"").trim()]; if(fa==null)fa=9; if(fb==null)fb=9; if(fa!==fb)return fa-fb; return a.c.pri-b.c.pri; }); }
