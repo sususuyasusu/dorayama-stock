@@ -226,6 +226,9 @@
   .hist .hr .kd{font-weight:800}
   .frm label{display:block;font-size:12px;color:var(--sub);font-weight:700;margin:10px 0 3px}
   .frm input,.frm select{width:100%;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:10px;font-size:14px;color:var(--ink);outline:none}
+  .addimg{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:2px 0 4px}
+  .addimg img{width:64px;height:64px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
+  .addimg .pbtn{flex:1}
   .ordtag{background:var(--blue-bg);color:var(--blue);border-radius:6px;padding:1px 7px;font-weight:800;font-size:11px}
 
   #toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);
@@ -288,13 +291,14 @@
 <div class="modal" id="addm"><div class="sheet" id="addBody"></div></div>
 <div class="modal" id="histm"><div class="sheet" id="histBody"></div></div>
 <input type="file" id="imgfile" accept="image/*" style="display:none" onchange="onImgPick(this)">
+<input type="file" id="a_imgfile" accept="image/*" style="display:none" onchange="onAddImgPick(this)">
 <div class="lbox" id="lbox" onclick="closePhoto()"><img id="lboxImg" src="" alt="商品写真"></div>
 <div id="toast"></div>
 
 <script>
 var TOKEN = "dorayama-zaiko-2026";
 var STATE = { tab:"要発注", cat:"すべて", sup:"すべて", group:null, q:"" };
-var DATA = null, GAS_URL = "", IMG_BY_ID = {}, PRICE_BY_ID = {}, CHECKED = {}, LAST_ACT = 0, OPEN_ID = null;
+var DATA = null, GAS_URL = "", IMG_BY_ID = {}, PRICE_BY_ID = {}, CHECKED = {}, LAST_ACT = 0, OPEN_ID = null, PENDING_ADD_IMG = "";
 
 function fmt(n){ if(n==null) return "—"; n=Math.round(n*10)/10; return (""+n).replace(/\B(?=(\d{3})+(?!\d))/g,","); }
 function esc(s){ return (""+(s==null?"":s)).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
@@ -788,22 +792,34 @@ function openAdd(){
   var set={}; DATA.items.forEach(function(it){ if(it.sup)set[it.sup]=1; }); var slist=Object.keys(set); if(slist.indexOf("その他")<0) slist.push("その他");
   var cset={}; DATA.items.forEach(function(it){ if(it.cat)cset[it.cat]=1; }); var clist=Object.keys(cset); if(clist.indexOf("未分類")<0) clist.push("未分類");
   function opts(arr,def){ return arr.map(function(a){ return '<option'+(a===def?" selected":"")+'>'+esc(a)+'</option>'; }).join(""); }
+  var freqAddOpts=['','毎日','月・水・金','週一(日)'].map(function(f){ return '<option value="'+esc(f)+'">'+(f===''?'（未設定）':esc(f))+'</option>'; }).join("");
+  PENDING_ADD_IMG="";
   document.getElementById('addBody').innerHTML=
      '<div class="shead"><div class="nm">商品を追加</div><button class="x" onclick="closeAdd()">✕</button></div>'
     +'<div class="frm">'
+    +'<label>写真（任意）</label>'
+    +'<div class="addimg"><img id="a_imgprev" alt="" style="display:none">'
+    +'<button type="button" class="pbtn o" id="a_pick" onclick="pickAddImg()">📷 写真を選ぶ</button>'
+    +'<button type="button" class="pbtn g" id="a_imgclr" onclick="clearAddImg()" style="display:none">取り消し</button></div>'
     +'<label>商品名 *</label><input id="a_name" type="text" autocomplete="off">'
     +'<label>カテゴリー</label><select id="a_cat">'+opts(clist,clist[0]||"未分類")+'</select>'
     +'<label>発注先</label><select id="a_sup">'+opts(slist,"その他")+'</select>'
+    +'<label>発注確認頻度</label><select id="a_freq">'+freqAddOpts+'</select>'
     +'<label>倉庫数量</label><input id="a_w" type="number" inputmode="decimal" value="0">'
     +'<label>店舗在庫</label><input id="a_s" type="number" inputmode="decimal" value="0">'
     +'<label>最低在庫</label><input id="a_min" type="number" inputmode="decimal">'
     +'<label>納期日数</label><input id="a_lead" type="number" inputmode="decimal">'
     +'<label>発注ロット</label><input id="a_lot" type="number" inputmode="decimal">'
+    +'<label>単価（円）</label><input id="a_price" type="number" inputmode="numeric" placeholder="例 5585">'
+    +'<label>備考</label><input id="a_memo" type="text" autocomplete="off">'
+    +'<label>参考URL・連絡先</label><input id="a_ref" type="text" autocomplete="off">'
+    +'<label>賞味期限</label><input id="a_exp" type="text" placeholder="例 2026-11-30">'
+    +'<label>ロット</label><input id="a_batch" type="text" autocomplete="off">'
     +'</div>'
     +'<div class="acts"><button class="pbtn p" id="a_save" onclick="submitAdd()">追加する</button></div>';
   document.getElementById('addm').className="modal show";
 }
-function closeAdd(){ document.getElementById('addm').className="modal"; }
+function closeAdd(){ PENDING_ADD_IMG=""; document.getElementById('addm').className="modal"; }
 function submitAdd(){
   var name=(document.getElementById('a_name').value||"").trim();
   if(!name){ toast("商品名を入れてください"); return; }
@@ -811,10 +827,18 @@ function submitAdd(){
   var btn=document.getElementById('a_save'); btn.className="pbtn p busy";
   gasJsonp({action:"add",name:name,
     cat:document.getElementById('a_cat').value, sup:document.getElementById('a_sup').value,
+    freq:document.getElementById('a_freq').value,
     w:document.getElementById('a_w').value, s:document.getElementById('a_s').value,
-    min:document.getElementById('a_min').value, lead:document.getElementById('a_lead').value, lot:document.getElementById('a_lot').value
+    min:document.getElementById('a_min').value, lead:document.getElementById('a_lead').value, lot:document.getElementById('a_lot').value,
+    price:document.getElementById('a_price').value, memo:document.getElementById('a_memo').value,
+    ref:document.getElementById('a_ref').value, exp:document.getElementById('a_exp').value, batch:document.getElementById('a_batch').value
   },function(resp){
-    if(resp&&resp.ok){ toast("「"+resp.name+"」を追加しました（"+resp.id+"）"); closeAdd(); reloadLive(); }
+    if(resp&&resp.ok){
+      var pend=PENDING_ADD_IMG;
+      closeAdd();
+      if(pend){ uploadImg(resp.id,pend); toast("「"+resp.name+"」を追加しました。写真を保存中…"); }
+      else { toast("「"+resp.name+"」を追加しました（"+resp.id+"）"); reloadLive(); }
+    }
     else { btn.className="pbtn p"; toast(saveErr(resp)); }
   });
 }
@@ -836,21 +860,41 @@ function autoRefresh(){
 }
 // 端末の写真を選ぶ→縮小→アップロード→ドライブ保存→再読込で表示
 function pickImg(id){ OPEN_ID=id; var f=document.getElementById('imgfile'); if(f){ f.value=''; f.click(); } }
-function onImgPick(inp){
-  var file=inp.files&&inp.files[0]; if(!file) return;
-  if(!GAS_URL){ toast('保存はMacで1回承認後に有効になります'); return; }
-  var id=OPEN_ID;
+// 画像ファイルを長辺900pxに縮小してJPEGのデータURLにする（詳細・新規追加で共用）
+function resizeImg(file,cb){
   var rd=new FileReader();
   rd.onload=function(ev){ var im=new Image();
     im.onload=function(){ var mx=900, w=im.width, h=im.height;
       if(w>mx||h>mx){ if(w>=h){ h=Math.round(h*mx/w); w=mx; } else { w=Math.round(w*mx/h); h=mx; } }
       var cv=document.createElement('canvas'); cv.width=w; cv.height=h; cv.getContext('2d').drawImage(im,0,0,w,h);
       var b64; try{ b64=cv.toDataURL('image/jpeg',0.82); }catch(e){ toast('画像を処理できませんでした'); return; }
-      uploadImg(id,b64); };
+      cb(b64); };
     im.onerror=function(){ toast('画像を読み込めませんでした'); };
     im.src=ev.target.result; };
   rd.onerror=function(){ toast('画像を読み込めませんでした'); };
   rd.readAsDataURL(file);
+}
+function onImgPick(inp){
+  var file=inp.files&&inp.files[0]; if(!file) return;
+  if(!GAS_URL){ toast('保存はMacで1回承認後に有効になります'); return; }
+  var id=OPEN_ID;
+  resizeImg(file,function(b64){ uploadImg(id,b64); });
+}
+// 新規追加フォーム：写真を選ぶ→縮小してプレビュー（送信は「追加する」で商品作成後にまとめて）
+function pickAddImg(){ var f=document.getElementById('a_imgfile'); if(f){ f.value=''; f.click(); } }
+function onAddImgPick(inp){
+  var file=inp.files&&inp.files[0]; if(!file) return;
+  resizeImg(file,function(b64){ PENDING_ADD_IMG=b64;
+    var p=document.getElementById('a_imgprev'); if(p){ p.src=b64; p.style.display='inline-block'; }
+    var c=document.getElementById('a_imgclr'); if(c) c.style.display='inline-block';
+    var b=document.getElementById('a_pick'); if(b) b.textContent='📷 写真を変更';
+  });
+}
+function clearAddImg(){ PENDING_ADD_IMG='';
+  var f=document.getElementById('a_imgfile'); if(f) f.value='';
+  var p=document.getElementById('a_imgprev'); if(p){ p.src=''; p.style.display='none'; }
+  var c=document.getElementById('a_imgclr'); if(c) c.style.display='none';
+  var b=document.getElementById('a_pick'); if(b) b.textContent='📷 写真を選ぶ';
 }
 function uploadImg(id,b64){
   toast('写真をアップロード中…');

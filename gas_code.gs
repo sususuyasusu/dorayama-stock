@@ -192,6 +192,12 @@ function doAdd_(p){
     if (p.min!==undefined&&p.min!=='') o['最低在庫']=num_(p.min);
     if (p.lead!==undefined&&p.lead!=='') o['納期']=num_(p.lead);
     if (p.lot!==undefined&&p.lot!=='') o['発注ロット']=num_(p.lot);
+    if (p.freq!==undefined&&String(p.freq)!=='') o['発注頻度']=String(p.freq);
+    if (p.price!==undefined&&p.price!=='') o['単価']=num_(p.price);
+    if (p.memo!==undefined&&String(p.memo)!=='') o['備考']=String(p.memo);
+    if (p.ref!==undefined&&String(p.ref)!=='') o['参考URL・連絡先']=String(p.ref);
+    if (p.exp!==undefined&&String(p.exp)!=='') o['賞味期限']=String(p.exp);
+    if (p.batch!==undefined&&String(p.batch)!=='') o['ロット']=String(p.batch);
     sh.appendRow(head.map(function(n){ return o[n]!==undefined?o[n]:''; }));
     return { ok:true, id:nid, name:o['商品名'] };
   } finally { lock.releaseLock(); }
@@ -243,9 +249,15 @@ function chkStateSheet_(){
   return sh;
 }
 function todayStr_(){ return Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy-MM-dd'); }
+// 日付セルは文字列("2026-10-19")でも日付型でも来るので、年月日だけ取り出して突き合わせる
+function dOnly_(s){
+  if (Object.prototype.toString.call(s)==='[object Date]' && !isNaN(s)) return Utilities.formatDate(s,'Asia/Tokyo','yyyy-MM-dd');
+  var m=String(s||'').match(/(\d{4})\D(\d{1,2})\D(\d{1,2})/); if(!m) return '';
+  return m[1]+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[3]).slice(-2);
+}
 function checkedToday_(){
   var sh = chkStateSheet_(); var v = sh.getDataRange().getDisplayValues(); var t = todayStr_(); var seen = {}, res = [];
-  for (var r=1; r<v.length; r++){ if (String(v[r][0]).trim()===t){ var id=String(v[r][1]).trim(); if (id && !seen[id]){ seen[id]=1; res.push(id); } } }
+  for (var r=1; r<v.length; r++){ if (dOnly_(v[r][0])===t){ var id=String(v[r][1]).trim(); if (id && !seen[id]){ seen[id]=1; res.push(id); } } }
   return res;
 }
 function doChkSet_(p){
@@ -254,10 +266,10 @@ function doChkSet_(p){
   var on = (String(p.on)==='1' || String(p.on)==='true'); var t = todayStr_();
   var lock = LockService.getScriptLock(); lock.waitLock(10000);
   try {
-    var sh = chkStateSheet_(); var v = sh.getDataRange().getValues();
-    if (on){ var exists=false; for (var r=1;r<v.length;r++){ if (String(v[r][0]).trim()===t && String(v[r][1]).trim()===id){ exists=true; break; } }
+    var sh = chkStateSheet_(); var v = sh.getDataRange().getDisplayValues();
+    if (on){ var exists=false; for (var r=1;r<v.length;r++){ if (dOnly_(v[r][0])===t && String(v[r][1]).trim()===id){ exists=true; break; } }
       if (!exists) sh.appendRow([t, id, String(p.name||''), nowStr_()]); }
-    else { for (var r=v.length-1; r>=1; r--){ if (String(v[r][0]).trim()===t && String(v[r][1]).trim()===id) sh.deleteRow(r+1); } }
+    else { for (var r=v.length-1; r>=1; r--){ if (dOnly_(v[r][0])===t && String(v[r][1]).trim()===id) sh.deleteRow(r+1); } }
     return { ok:true };
   } finally { lock.releaseLock(); }
 }
@@ -313,3 +325,7 @@ function doGet(e){
   if (cb) return ContentService.createTextOutput(cb+'('+txt+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
   return ContentService.createTextOutput(txt).setMimeType(ContentService.MimeType.JSON);
 }
+
+// 写真アップロード用のドライブ権限を1回だけ本人に承認してもらうための関数。
+// エディタでこの関数を選んで実行→権限を確認→許可、で以後アップロードが使えるようになる。
+function authDrive(){ return imgFolder_().getName(); }

@@ -192,6 +192,12 @@ function doAdd_(p){
     if (p.min!==undefined&&p.min!=='') o['最低在庫']=num_(p.min);
     if (p.lead!==undefined&&p.lead!=='') o['納期']=num_(p.lead);
     if (p.lot!==undefined&&p.lot!=='') o['発注ロット']=num_(p.lot);
+    if (p.freq!==undefined&&String(p.freq)!=='') o['発注頻度']=String(p.freq);
+    if (p.price!==undefined&&p.price!=='') o['単価']=num_(p.price);
+    if (p.memo!==undefined&&String(p.memo)!=='') o['備考']=String(p.memo);
+    if (p.ref!==undefined&&String(p.ref)!=='') o['参考URL・連絡先']=String(p.ref);
+    if (p.exp!==undefined&&String(p.exp)!=='') o['賞味期限']=String(p.exp);
+    if (p.batch!==undefined&&String(p.batch)!=='') o['ロット']=String(p.batch);
     sh.appendRow(head.map(function(n){ return o[n]!==undefined?o[n]:''; }));
     return { ok:true, id:nid, name:o['商品名'] };
   } finally { lock.releaseLock(); }
