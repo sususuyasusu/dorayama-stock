@@ -1039,9 +1039,25 @@ function applyData(d){
   DATA=d; document.getElementById('upd').textContent=d.updated||""; render();
 }
 
+// 公開版が新しくなっていたら、開いたときに自動で読み込み直す（ホーム画面アプリ等のキャッシュ対策）
+function checkUpdate(){
+  try{
+    fetch('ver.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():'';}).then(function(v){
+      v=(v||'').trim(); if(!v) return;
+      var seen=null, once=null;
+      try{ seen=localStorage.getItem('appver'); }catch(e){}
+      try{ once=sessionStorage.getItem('upd_'+v); }catch(e){}
+      if(seen && seen!==v && !once){
+        try{ sessionStorage.setItem('upd_'+v,'1'); localStorage.setItem('appver',v); }catch(e){}
+        location.replace(location.pathname+'?v='+encodeURIComponent(v)); return;
+      }
+      try{ localStorage.setItem('appver',v); }catch(e){}
+    }).catch(function(){});
+  }catch(e){}
+}
 function boot(){
+  checkUpdate();
   document.addEventListener('pointerdown',function(){ LAST_ACT=Date.now(); unlockAudio(); }, true);
-  setMuteIcon();
   document.addEventListener('input',function(){ LAST_ACT=Date.now(); }, true);
   setInterval(autoRefresh, 20000);   // 20秒ごとに全端末同期
   document.addEventListener('visibilitychange',function(){ if(!document.hidden) autoRefresh(); });
