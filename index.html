@@ -382,7 +382,8 @@ var SFX={
   success:[[523,0,0.09,'sine',0.06],[659,0.08,0.09,'sine',0.06],[784,0.16,0.2,'sine',0.07]],
   open:[[320,0,0.07,'sine',0.05],[520,0.045,0.09,'sine',0.05]],
   tab:[[760,0,0.04,'triangle',0.04]],
-  error:[[320,0,0.12,'sawtooth',0.05],[233,0.1,0.2,'sawtooth',0.05]]
+  error:[[320,0,0.12,'sawtooth',0.05],[233,0.1,0.2,'sawtooth',0.05]],
+  scroll:[[1150,0,0.02,'sine',0.03]]
 };
 function sfx(name){ if(MUTED) return; var seq=SFX[name]; if(!seq) return; var c=ac(); if(!c) return;
   if(c.state==='suspended'){ try{ c.resume(); }catch(e){} }
@@ -1058,6 +1059,12 @@ function checkUpdate(){
 function boot(){
   checkUpdate();
   document.addEventListener('pointerdown',function(){ LAST_ACT=Date.now(); unlockAudio(); }, true);
+  // スクロールで軽い音（一定量スクロールするたびに“カチッ”＝鳴りっぱなしにしない）
+  var _scrY=0,_scrT=0;
+  window.addEventListener('scroll',function(){
+    var y=window.scrollY||window.pageYOffset||0, now=Date.now();
+    if(Math.abs(y-_scrY)>=110 && now-_scrT>=80){ _scrY=y; _scrT=now; sfx('scroll'); }
+  },{passive:true});
   document.addEventListener('input',function(){ LAST_ACT=Date.now(); }, true);
   setInterval(autoRefresh, 20000);   // 20秒ごとに全端末同期
   document.addEventListener('visibilitychange',function(){ if(!document.hidden) autoRefresh(); });
