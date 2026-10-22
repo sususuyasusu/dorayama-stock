@@ -251,6 +251,46 @@
     .note{min-width:84px}
     .search{margin-left:0;max-width:none}
   }
+
+  /* ===== アニメーション（演出） ===== */
+  @keyframes riseIn{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+  @keyframes popIn{0%{opacity:0;transform:translateY(10px) scale(.9)}60%{transform:translateY(0) scale(1.04)}100%{opacity:1;transform:scale(1)}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideUp{from{transform:translateY(44px);opacity:.3}to{transform:translateY(0);opacity:1}}
+  @keyframes growX{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  @keyframes fabIn{0%{opacity:0;transform:scale(.3) rotate(-100deg)}70%{transform:scale(1.12) rotate(8deg)}100%{opacity:1;transform:none}}
+  @keyframes navPop{0%,100%{transform:translateY(0) scale(1)}42%{transform:translateY(-4px) scale(1.14)}}
+  @keyframes donePop{0%{transform:scale(1)}28%{transform:scale(.965)}100%{transform:scale(1)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes pulseDot{0%,100%{box-shadow:0 0 0 4px #fbe4d8}50%{box-shadow:0 0 0 7px #f6cebb}}
+
+  /* 入場演出（ユーザー操作時のみ .animin を付与） */
+  .animin{animation:riseIn .42s cubic-bezier(.22,.9,.3,1) both}
+  .kpi.animin{animation:popIn .5s cubic-bezier(.22,1.08,.3,1) both}
+  .invsum.animin,.chkprog.animin{animation:riseIn .46s cubic-bezier(.22,.9,.3,1) both}
+  /* バーは0から伸びる */
+  .fill{transform-origin:left center}
+  .row.animin .fill{animation:growX .6s cubic-bezier(.2,.8,.2,1) both}
+  .chkprog .cpfill{transform-origin:left center}
+  /* タイトルのドットがゆっくり鼓動 */
+  .ttl .dot{animation:pulseDot 2.4s ease-in-out infinite}
+  /* タブ切替でナビのアイコンが弾む */
+  .navbtn.bounce .ic{animation:navPop .44s cubic-bezier(.3,1.3,.4,1)}
+  /* 完了チェックの余韻 */
+  .crow{transition:background .3s ease,opacity .3s ease}
+  .crow.justdone{animation:donePop .45s ease}
+  .cpnum.bump{animation:popIn .42s ease}
+  /* FAB 登場 */
+  .fab{animation:fabIn .5s cubic-bezier(.2,1.1,.3,1) both}
+  /* モーダル：背景フェード＋シートがせり上がる */
+  .modal.show{animation:fadeIn .22s ease}
+  .modal.show .sheet{animation:slideUp .34s cubic-bezier(.2,.9,.25,1)}
+  /* 読み込み中スピナー */
+  .spin{display:inline-block;width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--coral);border-radius:50%;animation:spin .7s linear infinite;vertical-align:-3px}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+  }
 </style>
 </head>
 <body>
@@ -299,6 +339,16 @@
 var TOKEN = "dorayama-zaiko-2026";
 var STATE = { tab:"要発注", cat:"すべて", sup:"すべて", group:null, q:"" };
 var DATA = null, GAS_URL = "", IMG_BY_ID = {}, PRICE_BY_ID = {}, CHECKED = {}, LAST_ACT = 0, OPEN_ID = null, PENDING_ADD_IMG = "";
+var ANIM_SIG = null, ANIM_LASTTAB = null;
+// 数字のカウントアップ演出
+function countUp(el, to, dur, delay, yen){
+  to=Number(to)||0; dur=dur||520; delay=delay||0; var st=null;
+  function step(ts){ if(st===null)st=ts; var p=Math.min(1,(ts-st)/dur); var e=1-Math.pow(1-p,3);
+    var v=Math.round(to*e); el.textContent=yen?('¥'+fmt(v)):v; if(p<1) requestAnimationFrame(step);
+    else el.textContent=yen?('¥'+fmt(to)):to; }
+  setTimeout(function(){ requestAnimationFrame(step); }, delay);
+}
+function animEl(el,i){ el.classList.add('animin'); el.style.animationDelay=(Math.min(i,16)*0.035)+'s'; }
 
 function fmt(n){ if(n==null) return "—"; n=Math.round(n*10)/10; return (""+n).replace(/\B(?=(\d{3})+(?!\d))/g,","); }
 function esc(s){ return (""+(s==null?"":s)).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
@@ -340,10 +390,14 @@ function isUrl(s){ return /^https?:\/\//i.test((""+(s||"")).trim()); }
 function render(){
   if(!DATA){ return; }
   var tab=STATE.tab;
+  // 入場演出：絞り込み/タブ等が変わったユーザー操作のときだけ再生（自動更新や完了トグルでは再生しない）
+  var _sig=tab+"|"+STATE.cat+"|"+STATE.sup+"|"+STATE.group;
+  var doAnim=(_sig!==ANIM_SIG); var tabChanged=(tab!==ANIM_LASTTAB);
+  ANIM_SIG=_sig; ANIM_LASTTAB=tab;
   // 下部タブの選択状態
   var nb=document.getElementById('nav').children;
   for(var i=0;i<nb.length;i++){ var t=nb[i]; var isOff=t.className.indexOf('off')>=0;
-    t.className="navbtn"+(isOff?" off":"")+(t.getAttribute('data-tab')===tab?" on":""); }
+    t.className="navbtn"+(isOff?" off":"")+(t.getAttribute('data-tab')===tab?(" on"+(tabChanged?" bounce":"")):""); }
   // 要発注タブの通知バッジ（今すぐ発注の件数）
   var urgent=0; DATA.items.forEach(function(it){ if(classify(it).gk==="今すぐ発注") urgent++; });
   var nbd=document.getElementById('nbadge');
@@ -371,12 +425,15 @@ function render(){
     var counts={}; HERO.forEach(function(h){counts[h.key]=0;});
     items.forEach(function(x){ counts[x.c.gk]=(counts[x.c.gk]||0)+1; });
     var hero=document.getElementById('hero'); hero.innerHTML="";
-    HERO.forEach(function(h){
+    HERO.forEach(function(h,hi){
       var el=document.createElement('button');
-      el.className="kpi "+h.cls+(STATE.group===h.key?" on":"");
-      el.innerHTML='<div class="n">'+(counts[h.key]||0)+'</div><div class="lb">'+h.key+'</div><div class="bar"></div>';
+      var cnt=counts[h.key]||0;
+      el.className="kpi "+h.cls+(STATE.group===h.key?" on":"")+(doAnim?" animin":"");
+      if(doAnim) el.style.animationDelay=(hi*0.05)+'s';
+      el.innerHTML='<div class="n">'+(doAnim?0:cnt)+'</div><div class="lb">'+h.key+'</div><div class="bar"></div>';
       el.onclick=function(){ STATE.group=(STATE.group===h.key?null:h.key); render(); };
       hero.appendChild(el);
+      if(doAnim) countUp(el.querySelector('.n'), cnt, 560, 120+hi*60);
     });
   }
 
@@ -425,7 +482,7 @@ function render(){
   if(tab==="毎日"){
     var dnAll=rows.filter(function(x){return chkIs(x.it.id);}).length, totAll=rows.length;
     var pctAll=totAll?Math.round(dnAll/totAll*100):0;
-    var cp=document.createElement('div'); cp.className="chkprog";
+    var cp=document.createElement('div'); cp.className="chkprog"+(doAnim?" animin":"");
     cp.innerHTML='<div class="cptop"><span class="cplb">今日の確認</span><span class="cpnum">'+dnAll+' / '+totAll+' 完了</span></div>'+
       '<div class="cpbar"><div class="cpfill" style="width:'+pctAll+'%"></div></div>'+
       '<div class="cpsub"><input id="chkname" class="chknm" type="text" inputmode="text" placeholder="確認者の名前" value="'+esc(getChkName())+'" oninput="setChkName(this.value)">'+
@@ -437,12 +494,13 @@ function render(){
     var invTot=0, priced=0;
     rows.forEach(function(x){ if(x.it.price!=null && x.it.price!==""){ invTot += (x.it.w+x.it.s)*Number(x.it.price); priced++; } });
     var allView=(STATE.cat==="すべて" && STATE.sup==="すべて" && !STATE.q.trim());
-    var sum=document.createElement('div'); sum.className="invsum";
-    sum.innerHTML='<span class="lb">商品棚卸高（在庫評価額）</span><span class="amt">¥'+fmt(Math.round(invTot))+'</span>'+
+    var sum=document.createElement('div'); sum.className="invsum"+(doAnim?" animin":"");
+    sum.innerHTML='<span class="lb">商品棚卸高（在庫評価額）</span><span class="amt">¥'+(doAnim?'0':fmt(Math.round(invTot)))+'</span>'+
       '<span class="note">'+(allView?'全商品':'絞り込み')+'の合計　単価設定済み '+priced+' / '+rows.length+' 品（未設定は計算対象外）</span>';
     list.appendChild(sum);
+    if(doAnim) countUp(sum.querySelector('.amt'), Math.round(invTot), 720, 160, true);
   }
-  var lastGrp=null;
+  var lastGrp=null, ai=0;
   rows.forEach(function(x){
     if(groupKey){ var gk=groupKey(x);
       if(gk!==lastGrp){ lastGrp=gk;
@@ -451,10 +509,13 @@ function render(){
         var cntHtml=''+cnt;
         if(tab==="毎日"){ var dn=rows.filter(function(y){ return groupKey(y)===gk && chkIs(y.it.id); }).length; cntHtml=dn+' / '+cnt; }
         g.innerHTML='<span>'+esc(gk)+'</span><span class="cnt">'+cntHtml+'</span><span class="ln"></span>';
+        if(doAnim) animEl(g, ai++);
         list.appendChild(g);
       }
     }
-    list.appendChild(tab==="毎日" ? chkRowEl(x.it,x.c) : rowEl(x.it,x.c));
+    var _rel=(tab==="毎日" ? chkRowEl(x.it,x.c) : rowEl(x.it,x.c));
+    if(doAnim) animEl(_rel, ai++);
+    list.appendChild(_rel);
   });
 }
 
@@ -471,6 +532,8 @@ function chkToggle(id){ id=String(id); LAST_ACT=Date.now();
   if(!GAS_URL){ toast('保存はMacで1回承認後に有効になります'); return; }
   var on=!CHECKED[id]; if(on) CHECKED[id]=1; else delete CHECKED[id];
   var y=window.scrollY||window.pageYOffset||0; render(); window.scrollTo(0,y);
+  if(on){ var _r=document.querySelector('.crow[data-id="'+id+'"]'); if(_r) _r.classList.add('justdone'); }
+  var _cn=document.querySelector('.cpnum'); if(_cn){ _cn.classList.remove('bump'); void _cn.offsetWidth; _cn.classList.add('bump'); }
   gasJsonp({action:'chkset',id:id,on:on?1:0,name:(getChkName()||'')},function(resp){ if(!(resp&&resp.ok)) toast('同期に失敗しました（通信をご確認ください）'); }); }
 function chkRowEl(it,c){
   var done=chkIs(it.id);
