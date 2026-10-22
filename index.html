@@ -303,9 +303,33 @@
   .obtn:active,.donebtn:active,.subbtn:active,.histbtn:active,.pbtn:active,.chip:active{transform:scale(.96)}
   .kpi:active{transform:scale(.98)}
   /* 紙吹雪：ゆっくり舞い降りてフェード */
-  .confetti{position:fixed;width:9px;height:9px;border-radius:2px;z-index:85;pointer-events:none;will-change:transform,opacity;box-shadow:0 1px 2px rgba(0,0,0,.12);animation:confettiFall 2s cubic-bezier(.2,.5,.3,1) forwards}
+  .confetti{position:fixed;width:9px;height:9px;border-radius:2px;z-index:98;pointer-events:none;will-change:transform,opacity;box-shadow:0 1px 2px rgba(0,0,0,.12);animation:confettiFall 2s cubic-bezier(.2,.5,.3,1) forwards}
   /* 読み込み中スピナー */
   .spin{display:inline-block;width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--coral);border-radius:50%;animation:spin .7s linear infinite;vertical-align:-3px}
+
+  /* 提出のお祝い：3Dどらやきが躍動して飛び、CONGRATULATIONS と表示 */
+  .celebrate{position:fixed;inset:0;z-index:95;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;perspective:900px;background:radial-gradient(ellipse at center,rgba(20,64,40,.5),rgba(8,32,20,.74));animation:celBg .45s ease both}
+  .celebrate.out{animation:celOut .5s ease forwards}
+  @keyframes celBg{from{opacity:0}to{opacity:1}}
+  @keyframes celOut{to{opacity:0}}
+  .cel-dora{width:162px;height:122px;position:relative;transform-style:preserve-3d;filter:drop-shadow(0 16px 20px rgba(0,0,0,.45));animation:doraFly 1.15s cubic-bezier(.2,.85,.3,1.1) both}
+  .cel-dora .bun{position:absolute;left:0;right:0;height:67px;background:radial-gradient(ellipse at 40% 26%,#f3bf72,#d08a36 55%,#a1601f);box-shadow:inset 0 -7px 12px rgba(120,60,10,.45)}
+  .cel-dora .bun.top{top:0;border-radius:86px 86px 26px 26px}
+  .cel-dora .bun.bot{bottom:0;border-radius:26px 26px 86px 86px}
+  .cel-dora .fill{position:absolute;left:8px;right:8px;top:50px;height:27px;z-index:3;border-radius:14px;background:linear-gradient(#6e4123,#43260f);box-shadow:0 2px 3px rgba(0,0,0,.3),inset 0 2px 2px rgba(255,255,255,.1)}
+  .cel-dora .glate{position:absolute;left:20%;top:12%;width:32%;height:20%;border-radius:50%;background:rgba(255,255,255,.45);filter:blur(5px);z-index:4}
+  @keyframes doraFly{
+    0%{transform:translateY(130vh) scale(.2) rotateZ(0deg) rotateX(0deg);opacity:0}
+    14%{opacity:1}
+    50%{transform:translateY(-9vh) scale(1.22) rotateZ(380deg) rotateX(35deg)}
+    72%{transform:translateY(0) scale(.95) rotateZ(640deg) rotateX(-20deg)}
+    86%{transform:translateY(-1.6vh) scale(1.08) rotateZ(710deg) rotateX(10deg)}
+    100%{transform:translateY(0) scale(1.03) rotateZ(720deg) rotateX(0deg);opacity:1}
+  }
+  .cel-text{margin-top:30px;font-size:clamp(22px,7.6vw,34px);font-weight:900;letter-spacing:.01em;white-space:nowrap;background:linear-gradient(95deg,#ffe79a,#ffb84e,#ff8a3d);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 3px 14px rgba(0,0,0,.35);opacity:0;transform:translateY(14px) scale(.82);animation:celText .55s cubic-bezier(.2,1.5,.3,1) .72s forwards}
+  @keyframes celText{to{opacity:1;transform:none}}
+  .cel-sub{margin-top:10px;color:#eef7e4;font-weight:800;font-size:14px;opacity:0;animation:celSub .5s ease .98s forwards}
+  @keyframes celSub{to{opacity:1}}
 
   @media (prefers-reduced-motion: reduce){
     *{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
@@ -404,7 +428,8 @@ var SFX={
   open:[[300,0,0.08,'sine',0.12],[560,0.05,0.14,'sine',0.12]],
   tab:[[720,0,0.06,'triangle',0.12],[1080,0.05,0.08,'triangle',0.09]],
   error:[[330,0,0.16,'sawtooth',0.14],[233,0.13,0.28,'sawtooth',0.14]],
-  scroll:[[1200,0,0.024,'sine',0.055]]
+  scroll:[[1200,0,0.024,'sine',0.055]],
+  fanfare:[[523,0,0.13,'triangle',0.17],[659,0.11,0.13,'triangle',0.17],[784,0.22,0.13,'triangle',0.17],[1047,0.33,0.16,'triangle',0.18],[1319,0.45,0.1,'sine',0.17],[1047,0.55,0.4,'sine',0.19]]
 };
 function sfx(name){ if(MUTED) return; var seq=SFX[name]; if(!seq) return; var c=ac(); if(!c) return;
   if(c.state==='suspended'){ try{ c.resume(); }catch(e){} }
@@ -432,6 +457,17 @@ function burstConfetti(){
     document.body.appendChild(p);
     (function(el){ setTimeout(function(){ if(el&&el.parentNode) el.parentNode.removeChild(el); }, 3400); })(p);
   }
+}
+// 提出成功のお祝い：3Dどらやきが躍動して飛び、CONGRATULATIONS と表示
+function celebrate(){
+  sfx('fanfare'); burstConfetti();
+  var c=document.createElement('div'); c.className='celebrate';
+  c.innerHTML='<div class="cel-dora"><div class="bun top"></div><div class="fill"></div><div class="bun bot"></div><div class="glate"></div></div>'+
+    '<div class="cel-text">CONGRATULATIONS!</div>'+
+    '<div class="cel-sub">今日の確認 おつかれさま 🎉</div>';
+  document.body.appendChild(c);
+  setTimeout(function(){ c.className='celebrate out'; }, 2200);
+  setTimeout(function(){ if(c.parentNode) c.parentNode.removeChild(c); }, 2750);
 }
 
 function fmt(n){ if(n==null) return "—"; n=Math.round(n*10)/10; return (""+n).replace(/\B(?=(\d{3})+(?!\d))/g,","); }
@@ -652,7 +688,7 @@ function submitCheck(){
   var btn=document.querySelector('.subbtn'); if(btn){ btn.textContent='送信中…'; btn.className='subbtn busy'; }
   gasJsonp({action:'submitcheck',name:name,weekday:wd,scope:sc.join('・'),done:done,total:due.length,undone:undone.join('、')},function(resp){
     if(btn){ btn.textContent='提出'; btn.className='subbtn'; }
-    if(resp&&resp.ok){ sfx('success'); burstConfetti(); toast('提出しました（'+name+' ・ '+done+'/'+due.length+'件）'); }
+    if(resp&&resp.ok){ celebrate(); toast('提出しました（'+name+' ・ '+done+'/'+due.length+'件）'); }
     else toast(saveErr(resp));
   });
 }
