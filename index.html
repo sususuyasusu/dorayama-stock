@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#D85A30">
+<meta name="theme-color" content="#1d5b37">
 <title>どら山在庫リスト</title>
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,7 +13,8 @@
 <link rel="icon" href="icon-192.png">
 <style>
   :root{
-    --bg:#faf7f2; --card:#ffffff; --ink:#2a2420; --sub:#8a8178; --line:#e7e0d6;
+    --bg:#1d5b37; --card:#ffffff; --ink:#2a2420; --sub:#8a8178; --line:#e7e0d6;
+    --dgreen:#2c6a1c; --cream:#f4f8ee; --onbg:#bcd3a8; --sheetbg:#f2f6ec;
     --track:#ece6dc; --track-br:#d7cfc2;
     --coral:#d8552c; --green:#5a9a1e; --amber:#dd8a00; --blue:#2f7ed8; --red:#d23b32;
     --coral-bg:#fcebe3; --green-bg:#eef6e2; --amber-bg:#fdf0d8; --blue-bg:#e6effb; --gray-bg:#f1ede6;
@@ -26,12 +27,18 @@
     -webkit-font-smoothing:antialiased;line-height:1.5;padding:0 16px calc(76px + env(safe-area-inset-bottom));-webkit-text-size-adjust:100%;}
   .wrap{max-width:860px;margin:0 auto}
   .topbar{position:sticky;top:0;z-index:30;background:var(--bg);padding-top:env(safe-area-inset-top)}
-  .topbar:after{content:"";position:absolute;left:0;right:0;bottom:-12px;height:12px;background:linear-gradient(var(--bg),rgba(250,247,242,0));pointer-events:none}
+  .topbar:after{content:"";position:absolute;left:0;right:0;bottom:-12px;height:12px;background:linear-gradient(var(--bg),rgba(29,91,55,0));pointer-events:none}
   header.top{padding:14px 2px 8px;display:flex;align-items:flex-end;justify-content:space-between;gap:10px;flex-wrap:nowrap}
-  .ttl{font-size:20px;font-weight:800;letter-spacing:.02em;display:flex;align-items:center;gap:9px;flex:0 1 auto;min-width:0;white-space:nowrap}
-  .ttl .dot{width:11px;height:11px;border-radius:50%;background:var(--coral);box-shadow:0 0 0 4px #fbe4d8}
-  .updated{font-size:11.5px;color:var(--sub);white-space:nowrap;flex:none;text-align:right}
-  .updated b{color:var(--ink);font-weight:700}
+  .ttl{font-size:20px;font-weight:800;letter-spacing:.02em;display:flex;align-items:center;gap:9px;flex:0 1 auto;min-width:0;white-space:nowrap;color:var(--cream)}
+  .ttl .dot{width:11px;height:11px;border-radius:50%;background:var(--dgreen);box-shadow:0 0 0 4px #cde7ba}
+  .ttl .hdlogo{height:27px;width:auto;display:block;flex:none}
+  .updated{font-size:11.5px;color:var(--onbg);white-space:nowrap;flex:none;text-align:right}
+  .updated b{color:var(--cream);font-weight:700}
+  .tophd{display:flex;align-items:center;gap:8px;flex:none}
+  .mutebtn{border:1px solid rgba(255,255,255,.32);background:rgba(255,255,255,.12);border-radius:50%;width:34px;height:34px;padding:0;cursor:pointer;flex:none;-webkit-tap-highlight-color:transparent;color:var(--cream);display:flex;align-items:center;justify-content:center}
+  .mutebtn svg{width:19px;height:19px;display:block}
+  .mutebtn.muted{opacity:.65}
+  .mutebtn:active{transform:scale(.92)}
 
   .hero{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:4px 0 9px}
   .hero.hide{display:none}
@@ -64,9 +71,9 @@
   .search input::placeholder{color:var(--sub)}
 
   .list{display:flex;flex-direction:column;gap:7px}
-  .grp{font-size:12px;font-weight:800;color:var(--sub);margin:10px 2px 1px;letter-spacing:.04em;display:flex;align-items:center;gap:7px}
-  .grp .ln{flex:1;height:1px;background:var(--line)}
-  .grp .cnt{color:var(--ink);font-weight:800}
+  .grp{font-size:12px;font-weight:800;color:var(--onbg);margin:10px 2px 1px;letter-spacing:.04em;display:flex;align-items:center;gap:7px}
+  .grp .ln{flex:1;height:1px;background:rgba(255,255,255,.2)}
+  .grp .cnt{color:var(--cream);font-weight:800}
   .invsum{background:var(--coral-bg);border:1px solid #f1cbb9;border-radius:12px;padding:10px 14px;margin:2px 0 6px;display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap}
   .invsum .lb{font-size:12.5px;font-weight:800;color:#8a3b1c}
   .invsum .amt{font-size:21px;font-weight:800;color:var(--coral);letter-spacing:-.01em;font-variant-numeric:tabular-nums}
@@ -171,9 +178,9 @@
   .sdiff{font-size:11px;font-weight:800;border-radius:6px;padding:2px 8px}
   .sdiff.ok{background:var(--green-bg);color:var(--green)} .sdiff.loss{background:var(--coral-bg);color:var(--red)} .sdiff.over{background:var(--amber-bg);color:var(--amber)} .sdiff.none{background:var(--gray-bg);color:var(--sub)}
 
-  footer{margin-top:20px;text-align:center;color:var(--sub);font-size:12px;line-height:1.7}
+  footer{margin-top:20px;text-align:center;color:var(--onbg);font-size:12px;line-height:1.7}
   footer a{color:var(--coral);text-decoration:none;font-weight:700}
-  .empty{text-align:center;color:var(--sub);padding:46px 16px;font-size:14px;line-height:1.8}
+  .empty{text-align:center;color:var(--onbg);padding:46px 16px;font-size:14px;line-height:1.8}
 
   .banner{background:var(--amber-bg);color:#8a5a00;border:1px solid #f0d9a0;border-radius:11px;
     padding:9px 13px;font-size:12.5px;font-weight:700;margin:0 0 12px;display:none}
@@ -198,7 +205,7 @@
 
   .modal{position:fixed;inset:0;background:rgba(40,30,20,.45);z-index:60;display:none;align-items:flex-end;justify-content:center}
   .modal.show{display:flex}
-  .sheet{background:var(--bg);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px 16px 28px;box-shadow:0 -6px 30px rgba(0,0,0,.25)}
+  .sheet{background:var(--sheetbg);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px 16px 28px;box-shadow:0 -6px 30px rgba(0,0,0,.25)}
   @media(min-width:560px){ .modal{align-items:center} .sheet{border-radius:18px} }
   .shead{display:flex;align-items:center;gap:12px;margin-bottom:8px}
   .shead .thumb{width:54px;height:54px}
@@ -262,7 +269,7 @@
   @keyframes navPop{0%,100%{transform:translateY(0) scale(1)}42%{transform:translateY(-4px) scale(1.14)}}
   @keyframes donePop{0%{transform:scale(1)}28%{transform:scale(.965)}100%{transform:scale(1)}}
   @keyframes spin{to{transform:rotate(360deg)}}
-  @keyframes pulseDot{0%,100%{box-shadow:0 0 0 4px #fbe4d8}50%{box-shadow:0 0 0 7px #f6cebb}}
+  @keyframes pulseDot{0%,100%{box-shadow:0 0 0 4px #cde7ba}50%{box-shadow:0 0 0 7px #b7dd9f}}
 
   /* 入場演出（ユーザー操作時のみ .animin を付与） */
   .animin{animation:riseIn .42s cubic-bezier(.22,.9,.3,1) both}
@@ -297,8 +304,11 @@
 <div class="wrap">
   <div class="topbar" id="topbar">
     <header class="top">
-      <div class="ttl"><span class="dot"></span>どら山在庫リスト</div>
-      <div class="updated">最終更新 <b id="upd">—</b></div>
+      <div class="ttl"><img class="hdlogo" src="header-logo.png?v=3" alt="どら山ロゴ">どら山在庫リスト</div>
+      <div class="tophd">
+        <button class="mutebtn" id="muteBtn" onclick="toggleMute()" title="音のオン/オフ" aria-label="音の切り替え"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 6a9 9 0 0 1 0 12"/></svg></button>
+        <div class="updated">最終更新 <b id="upd">—</b></div>
+      </div>
     </header>
 
     <div class="hero" id="hero"></div>
@@ -349,10 +359,46 @@ function countUp(el, to, dur, delay, yen){
   setTimeout(function(){ requestAnimationFrame(step); }, delay);
 }
 function animEl(el,i){ el.classList.add('animin'); el.style.animationDelay=(Math.min(i,16)*0.035)+'s'; }
+// ===== 効果音（Web Audio・外部ファイル不要・端末ごとにミュート記憶） =====
+var AC=null, MUTED=false;
+try{ MUTED=(localStorage.getItem('sfxMuted')==='1'); }catch(e){}
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ AC=null; } } return AC; }
+function unlockAudio(){ var c=ac(); if(c && c.state==='suspended'){ try{ c.resume(); }catch(e){} } }
+function tone(f,start,dur,type,peak){
+  var c=ac(); if(!c) return;
+  var o=c.createOscillator(), g=c.createGain();
+  o.type=type||'sine'; o.frequency.value=f;
+  var t0=c.currentTime+start;
+  g.gain.setValueAtTime(0.0001,t0);
+  g.gain.exponentialRampToValueAtTime(peak||0.06,t0+0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+  o.connect(g); g.connect(c.destination);
+  o.start(t0); o.stop(t0+dur+0.03);
+}
+var SFX={
+  tick:[[880,0,0.05,'triangle',0.05]],
+  ok:[[660,0,0.1,'sine',0.06]],
+  done:[[659,0,0.1,'sine',0.07],[988,0.08,0.15,'sine',0.07]],
+  undo:[[392,0,0.12,'sine',0.05]],
+  success:[[523,0,0.09,'sine',0.06],[659,0.08,0.09,'sine',0.06],[784,0.16,0.2,'sine',0.07]],
+  open:[[320,0,0.07,'sine',0.05],[520,0.045,0.09,'sine',0.05]],
+  tab:[[760,0,0.04,'triangle',0.04]],
+  error:[[320,0,0.12,'sawtooth',0.05],[233,0.1,0.2,'sawtooth',0.05]]
+};
+function sfx(name){ if(MUTED) return; var seq=SFX[name]; if(!seq) return; var c=ac(); if(!c) return;
+  if(c.state==='suspended'){ try{ c.resume(); }catch(e){} }
+  for(var i=0;i<seq.length;i++){ var s=seq[i]; tone(s[0],s[1],s[2],s[3],s[4]); } }
+var ICON_ON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 6a9 9 0 0 1 0 12"/></svg>';
+var ICON_OFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m16.5 9.5 5 5M21.5 9.5l-5 5"/></svg>';
+function setMuteIcon(){ var b=document.getElementById('muteBtn'); if(b){ b.innerHTML=MUTED?ICON_OFF:ICON_ON; b.classList.toggle('muted',MUTED); } }
+function toggleMute(){ MUTED=!MUTED; try{ localStorage.setItem('sfxMuted',MUTED?'1':'0'); }catch(e){}
+  setMuteIcon();
+  if(!MUTED){ unlockAudio(); sfx('ok'); } }
 
 function fmt(n){ if(n==null) return "—"; n=Math.round(n*10)/10; return (""+n).replace(/\B(?=(\d{3})+(?!\d))/g,","); }
 function esc(s){ return (""+(s==null?"":s)).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
 function toast(msg){ var t=document.getElementById('toast'); t.textContent=msg; t.className='show';
+  if(/失敗|エラー|できませ|入れてください|空に/.test(msg||'')) sfx('error');
   clearTimeout(window._tt); window._tt=setTimeout(function(){ t.className=''; }, 2600); }
 function openPhoto(src){ if(!src) return; var b=document.getElementById('lbox'),im=document.getElementById('lboxImg');
   clearTimeout(window._lb); im.src=src; b.className='lbox'; b.style.display='flex'; void b.offsetWidth; b.className='lbox in'; }
@@ -531,6 +577,7 @@ function chkIs(id){ return !!CHECKED[String(id)]; }
 function chkToggle(id){ id=String(id); LAST_ACT=Date.now();
   if(!GAS_URL){ toast('保存はMacで1回承認後に有効になります'); return; }
   var on=!CHECKED[id]; if(on) CHECKED[id]=1; else delete CHECKED[id];
+  sfx(on?'done':'undo');
   var y=window.scrollY||window.pageYOffset||0; render(); window.scrollTo(0,y);
   if(on){ var _r=document.querySelector('.crow[data-id="'+id+'"]'); if(_r) _r.classList.add('justdone'); }
   var _cn=document.querySelector('.cpnum'); if(_cn){ _cn.classList.remove('bump'); void _cn.offsetWidth; _cn.classList.add('bump'); }
@@ -566,11 +613,11 @@ function submitCheck(){
   var btn=document.querySelector('.subbtn'); if(btn){ btn.textContent='送信中…'; btn.className='subbtn busy'; }
   gasJsonp({action:'submitcheck',name:name,weekday:wd,scope:sc.join('・'),done:done,total:due.length,undone:undone.join('、')},function(resp){
     if(btn){ btn.textContent='提出'; btn.className='subbtn'; }
-    if(resp&&resp.ok){ toast('提出しました（'+name+' ・ '+done+'/'+due.length+'件）'); }
+    if(resp&&resp.ok){ sfx('success'); toast('提出しました（'+name+' ・ '+done+'/'+due.length+'件）'); }
     else toast(saveErr(resp));
   });
 }
-function openHist(){ var m=document.getElementById('histm'); m.className='modal show';
+function openHist(){ var m=document.getElementById('histm'); m.className='modal show'; sfx('open');
   document.getElementById('histBody').innerHTML='<div class="shead"><div class="nm">提出履歴</div><button class="x" onclick="closeHist()">✕</button></div><div class="empty">読み込み中…</div>';
   gasJsonp({action:'checkhist'},function(resp){ renderHist(resp&&resp.ok?resp.hist:null); }); }
 function closeHist(){ document.getElementById('histm').className='modal'; }
@@ -670,6 +717,7 @@ function stkRowEl(it){
 function chg(id, field, delta, btn){
   var it=itemById(id); if(!it) return;
   if(!GAS_URL){ toast("保存はMacで1回承認後に有効になります"); return; }
+  sfx('tick');
   var cur=(field==="w")?it.w:it.s;
   var nv=Math.max(0,(cur||0)+delta);
   if(field==="w") it.w=nv; else it.s=nv; it.total=it.w+it.s; refreshAll(id);
@@ -702,6 +750,7 @@ function setField(id,field,delta){
   var it=itemById(id); if(!it) return;
   if(!GAS_URL){ toast("保存はMacで1回承認後に有効になります"); return; }
   var cur=fieldVal(it,field); var base=(cur==null||cur===""?0:Number(cur)); var nv=Math.max(0,base+delta);
+  sfx('tick');
   applyField(it,field,nv); refreshAll(id);
   gasJsonp({action:"set",id:id,field:field,value:nv},function(resp){
     if(resp&&resp.ok){ applyField(it,field,Number(resp.value)); }
@@ -719,7 +768,7 @@ function setFieldAbs(id,field,valstr){
   applyField(it,field,nv); refreshAll(id);
   gasJsonp({action:"set",id:id,field:field,value:nv},function(resp){
     if(!(resp&&resp.ok)){ applyField(it,field,cur); toast(saveErr(resp)); refreshAll(id); }
-    else toast("保存しました");
+    else { sfx('ok'); toast("保存しました"); }
   });
 }
 function setText(id,field,val){
@@ -730,7 +779,7 @@ function setText(id,field,val){
   it[field]=val; refreshAll(id);
   gasJsonp({action:"set",id:id,field:field,value:val},function(resp){
     if(!(resp&&resp.ok)){ it[field]=cur; toast(saveErr(resp)); refreshAll(id); }
-    else toast("保存しました");
+    else { sfx('ok'); toast("保存しました"); }
   });
 }
 
@@ -739,7 +788,7 @@ function doOrder(id){
   if(!GAS_URL){ toast("保存はMacで1回承認後に有効になります"); return; }
   it.ordered=true; refreshAll(id);
   gasJsonp({action:"order",id:id},function(resp){
-    if(resp&&resp.ok){ it.ordered=!!resp.ordered; it.oeta=resp.oeta||""; toast("発注を記録しました"); reloadLive(); }
+    if(resp&&resp.ok){ it.ordered=!!resp.ordered; it.oeta=resp.oeta||""; sfx('success'); toast("発注を記録しました"); reloadLive(); }
     else { it.ordered=false; toast(saveErr(resp)); }
     refreshAll(id);
   });
@@ -749,7 +798,7 @@ function doReceive(id){
   if(!GAS_URL){ toast("保存はMacで1回承認後に有効になります"); return; }
   var el=document.getElementById('rqty'); var qty=el?(el.value||""):"";
   gasJsonp({action:"receive",id:id,qty:qty},function(resp){
-    if(resp&&resp.ok){ it.ordered=false; it.oeta=""; if(resp.warehouse!=null){ it.w=Number(resp.warehouse); it.total=it.w+it.s; } toast("受領を記録しました"); reloadLive(); }
+    if(resp&&resp.ok){ it.ordered=false; it.oeta=""; if(resp.warehouse!=null){ it.w=Number(resp.warehouse); it.total=it.w+it.s; } sfx('success'); toast("受領を記録しました"); reloadLive(); }
     else toast(saveErr(resp));
     refreshAll(id);
   });
@@ -790,7 +839,7 @@ function histHtml(it){
   var rows=it.hist.map(function(h){ var d=h.dt?(""+h.dt).replace(/\s.*$/,""):""; return '<div class="hr"><span>'+esc(d)+'</span><span class="kd">'+esc(h.kind)+(h.qty?(" "+esc(h.qty)):"")+'</span></div>'; }).join("");
   return '<div class="hist"><div class="h">発注履歴</div>'+rows+'</div>';
 }
-function openDetail(id){ OPEN_ID=id; renderDetail(id); document.getElementById('detail').className="modal show"; }
+function openDetail(id){ OPEN_ID=id; renderDetail(id); document.getElementById('detail').className="modal show"; sfx('open'); }
 function closeDetail(){ OPEN_ID=null; document.getElementById('detail').className="modal"; }
 function renderDetail(id){
   var it=itemById(id); if(!it){ closeDetail(); return; }
@@ -880,7 +929,7 @@ function openAdd(){
     +'<label>ロット</label><input id="a_batch" type="text" autocomplete="off">'
     +'</div>'
     +'<div class="acts"><button class="pbtn p" id="a_save" onclick="submitAdd()">追加する</button></div>';
-  document.getElementById('addm').className="modal show";
+  document.getElementById('addm').className="modal show"; sfx('open');
 }
 function closeAdd(){ PENDING_ADD_IMG=""; document.getElementById('addm').className="modal"; }
 function submitAdd(){
@@ -897,6 +946,7 @@ function submitAdd(){
     ref:document.getElementById('a_ref').value, exp:document.getElementById('a_exp').value, batch:document.getElementById('a_batch').value
   },function(resp){
     if(resp&&resp.ok){
+      sfx('success');
       var pend=PENDING_ADD_IMG;
       closeAdd();
       if(pend){ uploadImg(resp.id,pend); toast("「"+resp.name+"」を追加しました。写真を保存中…"); }
@@ -991,13 +1041,14 @@ function applyData(d){
 }
 
 function boot(){
-  document.addEventListener('pointerdown',function(){ LAST_ACT=Date.now(); }, true);
+  document.addEventListener('pointerdown',function(){ LAST_ACT=Date.now(); unlockAudio(); }, true);
+  setMuteIcon();
   document.addEventListener('input',function(){ LAST_ACT=Date.now(); }, true);
   setInterval(autoRefresh, 20000);   // 20秒ごとに全端末同期
   document.addEventListener('visibilitychange',function(){ if(!document.hidden) autoRefresh(); });
   document.getElementById('q').addEventListener('input',function(e){STATE.q=e.target.value;render();});
   var nb=document.getElementById('nav').children;
-  for(var i=0;i<nb.length;i++){ (function(t){ t.onclick=function(){ if(t.className.indexOf('off')>=0) return; STATE.tab=t.getAttribute('data-tab'); STATE.group=null; render(); }; })(nb[i]); }
+  for(var i=0;i<nb.length;i++){ (function(t){ t.onclick=function(){ if(t.className.indexOf('off')>=0) return; sfx('tab'); STATE.tab=t.getAttribute('data-tab'); STATE.group=null; render(); }; })(nb[i]); }
   document.getElementById('fab').onclick=openAdd;
   ['detail','addm','histm'].forEach(function(mid){ var m=document.getElementById(mid);
     m.onclick=function(e){ if(e.target===m){ m.className="modal"; if(mid==='detail') OPEN_ID=null; } }; });
