@@ -517,8 +517,8 @@ function celebrate(){
   sfx('fanfare'); burstConfetti();
   var c=document.createElement('div'); c.className='celebrate';
   c.innerHTML='<canvas id="celCanvas" class="cel-canvas"></canvas>'+
-    '<div class="cel-text">CONGRATULATIONS!</div>'+
-    '<div class="cel-sub">今日の確認 おつかれさま 🎉</div>';
+    '<div class="cel-text">おつかれさま！</div>'+
+    '<div class="cel-sub">今日の在庫確認 完了 🎉</div>';
   document.body.appendChild(c);
   loadThree(function(){ try{ build3DDora(document.getElementById('celCanvas')); }catch(e){} });
   setTimeout(function(){ c.className='celebrate out'; }, 3200);
