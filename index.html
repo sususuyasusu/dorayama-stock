@@ -754,6 +754,7 @@ function chkRowEl(it,c){
     '<div class="chead">'+thumb+'<div style="min-width:0;flex:1"><div class="name tap cname" onclick="openDetail(\''+it.id+'\')">'+esc(it.name)+'<span class="chev">›</span></div>'+
       '<div class="meta"><span class="tag">'+esc(it.cat)+'</span><span class="sup-tag">'+esc(it.sup||'未設定')+'</span></div></div>'+
       '<div class="note"><span class="badge '+c.badgeCls+'">'+c.badge+'</span>'+nsub+'</div></div>'+
+    stockMeterHtml(it,c)+
     '<div class="edit">'+stepperHtml(it.id,"w","倉庫",it.w)+stepperHtml(it.id,"s","店舗",it.s)+'<span class="minlbl">最低 <b>'+(it.min!=null?fmt(it.min):"—")+'</b></span>'+btn+'</div>';
   return row;
 }
@@ -793,13 +794,20 @@ function renderHist(hist){
   h+='</div>';
   document.getElementById('histBody').innerHTML=h;
 }
-function rowEl(it,c){
+function stockMeterHtml(it,c){
   var s=it.s, w=it.w, mn=it.min;
   var scale=Math.max(mn||0, s+w, 1)*1.12;
   var storeW=Math.max(0,Math.min(100, s/scale*100));
   var wareW=Math.max(0,Math.min(100-storeW, w/scale*100));
   var minPct=(mn!=null)?Math.max(0,Math.min(100, mn/scale*100)):null;
-
+  var minMark=(minPct!=null)?'<div class="minmark" style="left:'+minPct+'%"></div>':'';
+  return '<div class="barwrap"><div class="track">'+
+    '<div class="fill store '+c.barCls+'" style="width:'+storeW+'%"></div>'+
+    '<div class="fill ware" style="left:'+storeW+'%;width:'+wareW+'%"></div>'+minMark+
+    '</div></div>';
+}
+function rowEl(it,c){
+  var mn=it.min;
   var row=document.createElement('div'); row.className="row "+c.lead; row.setAttribute('data-id', it.id);
   var ex=expInfo(it);
   var thumb = it.img
@@ -807,17 +815,13 @@ function rowEl(it,c){
     : '<div class="thumb ph">'+esc((it.cat||"").slice(0,2))+'</div>';
   var cart=isUrl(it.ref)?' <a class="cart" href="'+esc(it.ref)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">🛒</a>':'';
   var metaHtml='<span class="tag">'+esc(it.cat)+'</span><span class="sup-tag">'+esc(it.sup||'未設定')+'</span>'+(ex&&ex.cls?'<span class="exp '+ex.cls+'">'+ex.txt+'</span>':'');
-  var minMark=(minPct!=null)?'<div class="minmark" style="left:'+minPct+'%"></div>':'';
   var nsub=c.sub?'<div class="nsub">'+c.sub+'</div>':'';
 
   row.innerHTML=
     thumb+
     '<div style="min-width:0"><div class="name tap" onclick="openDetail(\''+it.id+'\')">'+esc(it.name)+cart+'<span class="chev">›</span></div><div class="meta">'+metaHtml+'</div></div>'+
     '<div class="note"><span class="badge '+c.badgeCls+'">'+c.badge+'</span>'+nsub+'</div>'+
-    '<div class="barwrap"><div class="track">'+
-      '<div class="fill store '+c.barCls+'" style="width:'+storeW+'%"></div>'+
-      '<div class="fill ware" style="left:'+storeW+'%;width:'+wareW+'%"></div>'+minMark+
-    '</div></div>'+
+    stockMeterHtml(it,c)+
     '<div class="edit">'+
       stepperHtml(it.id,"w","倉庫",it.w)+
       stepperHtml(it.id,"s","店舗",it.s)+
