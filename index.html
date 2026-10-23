@@ -25,6 +25,13 @@
   body{background:var(--bg);color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
     -webkit-font-smoothing:antialiased;line-height:1.5;padding:0 16px calc(76px + env(safe-area-inset-bottom));-webkit-text-size-adjust:100%;}
+  /* 背景：薄い白ロゴパターンを左へゆっくり流す */
+  #bgpat{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+  #bgpat::before{content:"";position:absolute;top:0;left:0;height:100%;width:300%;
+    background-image:url('bg-pattern.svg');background-repeat:repeat;background-size:560px auto;
+    opacity:.10;will-change:transform;animation:bgslide 120s linear infinite}
+  @keyframes bgslide{from{transform:translateX(0)}to{transform:translateX(-560px)}}
+  @media (prefers-reduced-motion:reduce){#bgpat::before{animation:none}}
   .wrap{max-width:860px;margin:0 auto}
   .topbar{position:sticky;top:0;z-index:30;background:var(--bg);padding-top:env(safe-area-inset-top)}
   .topbar:after{content:"";position:absolute;left:0;right:0;bottom:-12px;height:12px;background:linear-gradient(var(--bg),rgba(29,91,55,0));pointer-events:none}
@@ -338,6 +345,7 @@
 </style>
 </head>
 <body>
+<div id="bgpat"></div>
 <div class="wrap">
   <div class="topbar" id="topbar">
     <header class="top">
