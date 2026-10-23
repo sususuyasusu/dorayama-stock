@@ -26,21 +26,23 @@
     font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
     -webkit-font-smoothing:antialiased;line-height:1.5;padding:0 16px calc(76px + env(safe-area-inset-bottom));-webkit-text-size-adjust:100%;}
   /* 背景：薄い白ロゴパターンを左へゆっくり流す */
-  #bgpat{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
-  #bgpat::before{content:"";position:absolute;top:0;left:0;height:100%;width:300%;
+  #bgpat,.topbar-pattern{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+  #bgpat::before,.topbar-pattern::before{content:"";position:absolute;top:0;left:0;height:100%;width:300%;
     background-image:url('bg-pattern-v2.svg');background-repeat:repeat;background-size:230px 230px;
     opacity:.10;will-change:transform;animation:bgslide 80s linear infinite}
   @keyframes bgslide{from{transform:translateX(0)}to{transform:translateX(-230px)}}
-  @media (prefers-reduced-motion:reduce){#bgpat::before{animation:none}}
+  @media (prefers-reduced-motion:reduce){#bgpat::before,.topbar-pattern::before{animation:none}}
   /* 深緑にザラザラの質感を足す（静止のグレイン） */
-  #grain{position:fixed;inset:0;z-index:-1;pointer-events:none;
+  #grain,.topbar-grain{position:fixed;inset:0;z-index:-1;pointer-events:none;
     background-image:url('grain.png');background-repeat:repeat;background-size:240px 240px;
     opacity:.32;mix-blend-mode:overlay}
   .wrap{max-width:860px;margin:0 auto}
-  .topbar{position:sticky;top:0;z-index:30;background-color:var(--bg);
-    background-image:url('grain.png');background-size:240px 240px;background-repeat:repeat;background-blend-mode:soft-light;
+  /* 同じ画面座標・濃さ・アニメーションで上下の背景を連続させる。
+     固定背景を帯の範囲だけ切り抜き、スクロールする商品は背面に隠す。 */
+  .topbar{position:sticky;top:0;z-index:30;clip-path:inset(0 -16px);
     padding-top:env(safe-area-inset-top)}
-  .topbar:after{content:"";position:absolute;left:0;right:0;bottom:-12px;height:12px;background:linear-gradient(var(--bg),rgba(29,91,55,0));pointer-events:none}
+  .topbar-backdrop{position:fixed;inset:0;z-index:-1;background:var(--bg);
+    isolation:isolate;pointer-events:none}
   header.top{padding:14px 2px 8px;display:flex;align-items:flex-end;justify-content:space-between;gap:10px;flex-wrap:nowrap}
   .ttl{font-size:20px;font-weight:800;letter-spacing:.02em;display:flex;align-items:center;gap:9px;flex:0 1 auto;min-width:0;white-space:nowrap;color:var(--cream)}
   .ttl .dot{width:11px;height:11px;border-radius:50%;background:var(--dgreen);box-shadow:0 0 0 4px #cde7ba}
@@ -365,6 +367,7 @@
 <div id="bgpat"></div>
 <div class="wrap">
   <div class="topbar" id="topbar">
+    <div class="topbar-backdrop" aria-hidden="true"><div class="topbar-grain"></div><div class="topbar-pattern"></div></div>
     <header class="top">
       <div class="ttl"><img class="hdlogo" src="header-logo.png?v=3" alt="どら山ロゴ">在庫リスト</div>
       <div class="tophd">
