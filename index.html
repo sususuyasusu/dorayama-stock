@@ -720,6 +720,11 @@ function renderDashboard(skipLoad){
  +'<div class="dash-grid"><div class="dash-card"><h3>ABC分析・パレート図</h3><div class="dash-legend"><span><i style="background:#d8552c"></i>A</span><span><i style="background:#d9ae4d"></i>B</span><span><i style="background:#638e40"></i>C</span><span>深緑の線：累積構成比</span></div>'+dashPareto(rows)+'<p>発注回数の多い順に累積80%までをA、95%までをB、残りをCとします。境界をまたぐ商品は手前のランク、同じ回数の場合は商品名順で区分します。金額・消費量のABCではありません。</p></div><div class="dash-card"><h3>発注先別の発注回数</h3>'+(entries.length?dashBars(entries):'<div class="dash-empty">発注記録はありません</div>')+'</div></div>'
  +'<div class="dash-grid"><div class="dash-card"><h3>日別の発注推移</h3>'+dashTrend(rows,DASH.month)+'<p>同じ日に複数商品を発注した場合は、商品ごとに数えます。</p></div><div class="dash-card"><h3>現在の在庫バランス</h3>'+stock+'<p>全商品を対象とした現在値です。選択月の過去在庫ではありません。<br>在庫更新 '+esc(DATA.updated||'')+'</p></div></div>'
  +'<div class="dash-card"><h3>商品別の発注数・頻度</h3><p>発注間隔は、その月の発注日の間隔の平均です（同日内の重複は1日）。数量は入力された実績のみ。単位が異なるため商品間で合算せず、空欄を発注ロットで補いません。</p><div class="dash-table-wrap"><table><thead><tr><th>商品</th><th>ABC</th><th>発注回数</th><th>構成比</th><th>累積</th><th>平均発注間隔</th><th>記録済み数量</th><th>数量記録件数</th></tr></thead><tbody>'+tr+'</tbody></table></div>'+(!rows.length?'<div class="dash-empty">この月・条件の発注記録はありません。</div>':'')+'</div></section>';
+ if(DASH.enterOnReady){
+  list.querySelectorAll('.dash-head,.dash-card').forEach(function(card,i){animEl(card,Math.min(i,6));});
+  DASH.enterOnReady=false;
+ }
+
 }
 
 function render(){
@@ -753,7 +758,7 @@ function render(){
   document.getElementById('foot').style.display=(tab==="要発注"||tab==="商品")?"":"none";
 
   var list=document.getElementById('list');
-  if(tab==="分析"){renderDashboard();return;}
+  if(tab==="分析"){if(tabChanged)DASH.enterOnReady=true;renderDashboard();return;}
 
   // 集計カード（要発注タブ）
   var items = DATA.items.map(function(it){ return {it:it,c:classify(it)}; });
@@ -1399,7 +1404,7 @@ function initTabSwipe(){
  function reduced(){return matchMedia('(prefers-reduced-motion: reduce)').matches;}
  function clearMotion(){
   serial++;motion.forEach(function(a){a.cancel();});motion=[];busy=false;
-  list.style.transform='';list.style.willChange='';list.style.pointerEvents='';
+  list.style.transform='';list.style.opacity='';list.style.willChange='';list.style.pointerEvents='';
  }
  function blocked(target){
   if(!(target instanceof Element))return true;
@@ -1417,22 +1422,22 @@ function initTabSwipe(){
  function returnHome(){
   if(!list.style.transform){return;}
   if(reduced()||!list.animate){clearMotion();return;}
-  var current=getComputedStyle(list).transform,stamp=++serial;
-  busy=true;list.style.transform='';
-  var a=list.animate([{transform:current},{transform:'translateX(0)'}],{duration:190,easing:'cubic-bezier(.2,.8,.3,1)'});motion=[a];
+  var style=getComputedStyle(list),current=style.transform,alpha=style.opacity,stamp=++serial;
+  busy=true;list.style.transform='';list.style.opacity='';
+  var a=list.animate([{transform:current,opacity:alpha},{transform:'translateX(0)',opacity:1}],{duration:190,easing:'cubic-bezier(.2,.8,.3,1)'});motion=[a];
   a.finished.catch(function(){}).then(function(){if(stamp===serial)clearMotion();});
  }
  function travel(g,dx,target){
   if(reduced()||!list.animate){clearMotion();target.click();window.scrollTo(0,0);return;}
-  var stamp=++serial,sign=dx<0?-1:1,start=getComputedStyle(list).transform;
-  busy=true;list.style.pointerEvents='none';list.style.willChange='transform';
-  var out=list.animate([{transform:start},{transform:'translateX('+sign*(innerWidth+24)+'px)'}],{duration:170,easing:'cubic-bezier(.4,0,1,.6)',fill:'forwards'});motion=[out];
+  var stamp=++serial,sign=dx<0?-1:1,start=getComputedStyle(list).transform,alpha=getComputedStyle(list).opacity;
+  busy=true;list.style.pointerEvents='none';list.style.willChange='transform,opacity';
+  var out=list.animate([{transform:start,opacity:alpha},{transform:'translateX('+sign*(innerWidth+24)+'px)',opacity:0}],{duration:170,easing:'cubic-bezier(.4,0,1,.6)',fill:'forwards'});motion=[out];
   out.finished.then(function(){
    if(stamp!==serial)return;
    if(STATE.tab!==g.tab||anyModalOpen()){clearMotion();return;}
-   out.cancel();list.style.transform='';
+   out.cancel();list.style.transform='translateY(16px)';list.style.opacity='0';
    target.click();window.scrollTo(0,0);
-   var enter=list.animate([{transform:'translateX('+(-sign*(innerWidth+24))+'px)'},{transform:'translateX(0)'}],{duration:270,easing:'cubic-bezier(.16,1,.3,1)',fill:'forwards'});motion=[enter];
+   var enter=list.animate([{transform:'translateY(16px)',opacity:0},{transform:'translateY(0)',opacity:1}],{duration:600,easing:'cubic-bezier(.22,.61,.36,1)',fill:'forwards'});motion=[enter];
    enter.finished.then(function(){if(stamp===serial)clearMotion();}).catch(function(){});
   }).catch(function(){if(stamp===serial)clearMotion();});
  }
@@ -1453,7 +1458,8 @@ function initTabSwipe(){
    if(e.cancelable)e.preventDefault();
    if(!reduced()){
     var distance=neighbor(gesture.tab,dx)?Math.max(-innerWidth*.85,Math.min(innerWidth*.85,dx)):dx*.2;
-    list.style.willChange='transform';list.style.transform='translateX('+distance+'px)';
+    list.style.willChange='transform,opacity';list.style.transform='translateX('+distance+'px)';
+    list.style.opacity=String(Math.max(.08,1-Math.abs(distance)/innerWidth*.95));
    }
   }
  },{passive:false});
