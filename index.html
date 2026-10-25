@@ -373,7 +373,7 @@
   .intro.leaving{animation:introCurtain 1.05s linear forwards}
   .intro.leaving .intro-stage{animation:introApproach 1.05s linear forwards}
   @keyframes introRise{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
-  @keyframes introApproach{0%{transform:scale(1);filter:blur(0);opacity:1;animation-timing-function:ease-out}16%{transform:scale(.91);filter:blur(0);opacity:1;animation-timing-function:cubic-bezier(.84,0,.95,.42)}100%{transform:scale(48);filter:blur(28px);opacity:0}}
+  @keyframes introApproach{0%{transform:scale(1);filter:blur(0);opacity:1;animation-timing-function:cubic-bezier(.8,0,1,.5)}100%{transform:scale(48);filter:blur(28px);opacity:0}}
   @keyframes introCurtain{0%,72%{opacity:1}100%{opacity:0}}
   @keyframes introFailsafe{to{visibility:hidden;pointer-events:none}}
   @media(prefers-reduced-motion:reduce){
