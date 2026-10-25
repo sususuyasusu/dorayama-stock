@@ -756,6 +756,10 @@ function dashInventory(){
 }
 
 function renderDashboard(skipLoad){
+ if(DASH.enterOnReady&&DASH.data)viewEntryStart();
+ renderDashboardContents(skipLoad);viewEntryResume();
+}
+function renderDashboardContents(skipLoad){
  if(!DASH.month)DASH.month=dashMonth();
  if(!skipLoad)dashLoad(false);
  var list=document.getElementById('list'),d=DASH.data;
@@ -786,7 +790,27 @@ function renderDashboard(skipLoad){
 
 }
 
+var VIEW_ENTRY={sig:null,at:0};
+function viewEntryStart(){VIEW_ENTRY.at=performance.now();}
+function viewEntryResume(){
+ if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+ var elapsed=performance.now()-VIEW_ENTRY.at;
+ if(elapsed>=1750)return;
+ var list=document.getElementById('list'),i=0;
+ list.querySelectorAll('.row,.crow,.grp,.chkprog,.invsum,.dash-head,.dash-card,.empty').forEach(function(el){
+  var summary=el.matches('.chkprog,.invsum,.empty');
+  var delay=summary?0:Math.min(i++,STATE.tab==='分析'?6:22)*50;
+  el.classList.add('animin');el.style.animationDelay=((delay-elapsed)/1000)+'s';
+ });
+}
 function render(){
+ if(!DATA)return;
+ var sig=STATE.tab+'|'+STATE.cat+'|'+STATE.sup+'|'+STATE.group;
+ if(sig!==VIEW_ENTRY.sig){VIEW_ENTRY.sig=sig;viewEntryStart();}
+ renderContents();viewEntryResume();
+}
+
+function renderContents(){
   if(!DATA){ return; }
   var tab=STATE.tab;
   // 入場演出：絞り込み/タブ等が変わったユーザー操作のときだけ再生（自動更新や完了トグルでは再生しない）
