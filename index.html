@@ -399,6 +399,29 @@
   .dash-inventory td:not(:first-child){white-space:nowrap}
   @media(max-width:650px){.dash-money-grid{grid-template-columns:1fr 1fr}.dash-money-grid>div:first-child{grid-column:1/-1}.dash-money-grid strong{font-size:23px}}
   .swipe-viewport{overflow:clip;overflow-clip-margin:12px}
+  /* 起動演出はintro-style.txtでnoren / zoomを切替。従来のzoomも保持。 */
+  .intro.noren{background:transparent;perspective:1200px}
+  .noren-panel{position:absolute;top:0;bottom:0;width:calc(50% + 1px);overflow:hidden;background-color:var(--bg);
+    background-image:linear-gradient(90deg,rgba(0,0,0,.14),transparent 22%,rgba(255,255,255,.025) 45%,rgba(0,0,0,.09) 72%,transparent 90%),repeating-linear-gradient(0deg,rgba(244,248,238,.018) 0 1px,transparent 1px 3px),repeating-linear-gradient(90deg,rgba(0,0,0,.025) 0 1px,transparent 1px 3px);
+    backface-visibility:hidden;will-change:transform;box-shadow:0 12px 32px rgba(0,0,0,.12)}
+  .noren-left{left:0;transform-origin:left top}
+  .noren-right{left:50%;transform-origin:right top}
+  .noren-scene{position:absolute;top:0;bottom:0;left:0;width:100vw;display:grid;place-items:center}
+  .noren-right .noren-scene{left:-50vw}
+  .noren-scene .intro-logo{animation:none;opacity:1;transform:none}
+  .intro.noren>.intro-stage{position:relative;z-index:1}
+  .intro.noren.leaving{animation:none}
+  .intro.noren.leaving>.intro-stage{visibility:hidden;animation:none}
+  .intro.noren.leaving .noren-scene .intro-stage{visibility:visible;animation:none}
+  .intro.noren.leaving .noren-left{animation:norenLeft 1.28s cubic-bezier(.5,0,.5,1) forwards}
+  .intro.noren.leaving .noren-right{animation:norenRight 1.28s cubic-bezier(.5,0,.5,1) forwards}
+  @keyframes norenLeft{from{transform:translateX(0) rotateY(0) rotateZ(0) skewY(0);clip-path:polygon(0 0,100% 0,100% 25%,100% 50%,100% 75%,100% 100%,0 100%)}to{transform:translateX(-123%) rotateY(18deg) rotateZ(8deg) skewY(-2deg);clip-path:polygon(0 0,100% 0,97% 25%,93% 50%,96% 75%,91% 100%,0 100%)}}
+  @keyframes norenRight{from{transform:translateX(0) rotateY(0) rotateZ(0) skewY(0);clip-path:polygon(0 0,100% 0,100% 100%,0 100%,0 75%,0 50%,0 25%)}to{transform:translateX(123%) rotateY(-18deg) rotateZ(-8deg) skewY(2deg);clip-path:polygon(0 0,100% 0,100% 100%,9% 100%,4% 75%,7% 50%,3% 25%)}}
+  @media(prefers-reduced-motion:reduce){
+    .intro.noren.leaving{animation:introCurtain .15s linear forwards}
+    .intro.noren.leaving .noren-panel{animation:none;transform:none}
+  }
+
 </style>
 </head>
 <body>
@@ -1340,6 +1363,35 @@ function applyData(d){
   introReady();
 }
 
+function introSetStyle(state,style){
+ if(state.leaving)return;
+ state.style=style==='noren'?'noren':'zoom';
+ state.exitMs=state.reduce?180:state.style==='noren'?1330:1100;
+ state.el.classList.toggle('noren',state.style==='noren');
+ state.el.querySelectorAll('.noren-panel').forEach(function(panel){panel.remove();});
+ if(state.style==='noren'){
+  ['left','right'].forEach(function(side){
+   var panel=document.createElement('div');panel.className='noren-panel noren-'+side;panel.setAttribute('aria-hidden','true');
+   var scene=document.createElement('div');scene.className='noren-scene';panel.appendChild(scene);state.el.insertBefore(panel,state.el.firstChild);
+  });
+ }
+}
+function introLoadStyle(state){
+ var resolved=false;
+ function finish(style){if(resolved)return;resolved=true;introSetStyle(state,style);state.styleReady=true;introTryExit();}
+ var timer=setTimeout(function(){finish('zoom');},800);
+ fetch('intro-style.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){if(!r.ok)throw Error();return r.text();}).then(function(s){clearTimeout(timer);finish(s.trim());}).catch(function(){clearTimeout(timer);finish('zoom');});
+}
+function introPrepareNoren(state){
+ if(state.style!=='noren')return;
+ var stage=state.el.querySelector(':scope > .intro-stage');
+ state.el.querySelectorAll('.noren-scene').forEach(function(scene){
+  var copy=stage.cloneNode(true);copy.setAttribute('aria-hidden','true');
+  copy.querySelectorAll('[id]').forEach(function(el){el.removeAttribute('id');});
+  scene.appendChild(copy);
+ });
+}
+
 var INTRO_STATE=null;
 function introCompleteTitle(state){
   if(!state||state.leaving)return;
@@ -1363,7 +1415,8 @@ function startIntro(){
   if(INTRO_STATE)return;
   var el=document.getElementById('intro');if(!el)return;
   var reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var state=INTRO_STATE={el:el,min:false,ready:false,leaving:false,titleDone:false,titleAt:0,typeIndex:0,reduce:reduce,exitMs:reduce?180:1100};
+  var state=INTRO_STATE={el:el,min:false,ready:false,leaving:false,titleDone:false,titleAt:0,typeIndex:0,reduce:reduce,style:'zoom',styleReady:false,exitMs:reduce?180:1100};
+  introLoadStyle(state);
   if(reduce)introCompleteTitle(state);
   else state.typeTimer=setTimeout(function(){introTypeNext(state);},650);
   setTimeout(function(){state.min=true;introTryExit();},reduce?200:2200);
@@ -1374,9 +1427,10 @@ function startIntro(){
 }
 function introReady(){if(INTRO_STATE){INTRO_STATE.ready=true;introTryExit();}}
 function introTryExit(){
-  var state=INTRO_STATE;if(!state||!state.min||!state.ready||!state.titleDone||state.leaving)return;
+  var state=INTRO_STATE;if(!state||!state.min||!state.ready||!state.titleDone||!state.styleReady||state.leaving)return;
   var hold=state.reduce?0:450-(Date.now()-state.titleAt);
   if(hold>0){clearTimeout(state.holdTimer);state.holdTimer=setTimeout(introTryExit,hold);return;}
+  introPrepareNoren(state);
   state.leaving=true;clearTimeout(state.deadline);clearTimeout(state.typeTimer);state.el.classList.add('leaving');
   setTimeout(function(){state.el.remove();},state.exitMs);
 }
