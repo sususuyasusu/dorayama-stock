@@ -1391,8 +1391,56 @@ function checkUpdate(){
     }).catch(function(){});
   }catch(e){}
 }
+// 横スクロール領域・入力操作・詳細画面には介入しない、一指のタブ移動。
+function initTabSwipe(){
+ var gesture=null;
+ function blocked(target){
+  if(!(target instanceof Element))return true;
+  if(target.closest('button,a,input,textarea,select,[contenteditable],#nav,.modal,#lbox,.celebrate,.dash-table-wrap'))return true;
+  for(var el=target;el&&el!==document.body;el=el.parentElement){
+   var x=getComputedStyle(el).overflowX;
+   if((x==='auto'||x==='scroll')&&el.scrollWidth>el.clientWidth+1)return true;
+  }
+  return false;
+ }
+ document.addEventListener('touchstart',function(e){
+  gesture=null;
+  if(e.touches.length!==1||!DATA||anyModalOpen()||document.getElementById('intro')||blocked(e.target))return;
+  var t=e.touches[0];
+  if(t.clientX<24||t.clientX>innerWidth-24)return;
+  gesture={id:t.identifier,x:t.clientX,y:t.clientY,lastX:t.clientX,lastY:t.clientY,time:Date.now(),axis:null,tab:STATE.tab};
+ },{passive:true});
+ document.addEventListener('touchmove',function(e){
+  if(!gesture)return;
+  if(e.touches.length!==1){gesture=null;return;}
+  var t=e.touches[0];if(t.identifier!==gesture.id){gesture=null;return;}
+  var dx=t.clientX-gesture.x,dy=t.clientY-gesture.y;
+  gesture.lastX=t.clientX;gesture.lastY=t.clientY;
+  if(!gesture.axis&&Math.max(Math.abs(dx),Math.abs(dy))>12){
+   gesture.axis=Math.abs(dx)>Math.abs(dy)*1.5?'x':'y';
+  }
+  if(gesture.axis==='x'&&e.cancelable)e.preventDefault();
+ },{passive:false});
+ document.addEventListener('touchcancel',function(){gesture=null;},{passive:true});
+ document.addEventListener('touchend',function(e){
+  var g=gesture;gesture=null;
+  if(!g||e.touches.length||anyModalOpen()||STATE.tab!==g.tab)return;
+  var t=Array.from(e.changedTouches).find(function(t){return t.identifier===g.id;});if(!t)return;
+  var dx=t.clientX-g.x,dy=t.clientY-g.y;
+  if(g.axis!=='x'||Math.abs(dx)<Math.min(64,innerWidth*.17)||Math.abs(dx)<Math.abs(dy)*1.5||Date.now()-g.time>850)return;
+  var tabs=Array.from(document.querySelectorAll('#nav .navbtn:not(.off)')),index=tabs.findIndex(function(b){return b.getAttribute('data-tab')===g.tab;}),next=index+(dx<0?1:-1);
+  if(index<0||next<0||next>=tabs.length)return;
+  tabs[next].click();window.scrollTo(0,0);
+  var list=document.getElementById('list');
+  if(list.animate&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+   list.animate([{transform:'translateX('+(dx<0?22:-22)+'px)',opacity:.75},{transform:'translateX(0)',opacity:1}],{duration:230,easing:'cubic-bezier(.2,.7,.3,1)'});
+  }
+ },{passive:true});
+}
+
 function boot(){
   startIntro();
+  initTabSwipe();
   checkUpdate();
   setTimeout(function(){ try{ loadThree(function(){}); }catch(e){} }, 5000);   // 3Dライブラリを静かに先読み（提出お祝いを即出すため）
   document.addEventListener('pointerdown',function(){ LAST_ACT=Date.now(); unlockAudio(); }, true);
