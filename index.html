@@ -1379,6 +1379,7 @@ function applyData(d){
 function introSetStyle(state,style){
  if(state.leaving)return;
  state.style=['noren','kinetic'].indexOf(style)>=0?style:'zoom';
+ state.styleAt=Date.now();
  state.exitMs=state.reduce?180:state.style==='noren'?1330:state.style==='kinetic'?700:1100;
  state.el.classList.toggle('noren',state.style==='noren');
  state.el.classList.toggle('kinetic',state.style==='kinetic');
@@ -1446,7 +1447,7 @@ function startIntro(){
 function introReady(){if(INTRO_STATE){INTRO_STATE.ready=true;introTryExit();}}
 function introTryExit(){
   var state=INTRO_STATE;if(!state||!state.min||!state.ready||!state.titleDone||!state.styleReady||state.leaving)return;
-  var hold=state.reduce?0:Math.max(450-(Date.now()-state.titleAt),state.style==='kinetic'?2500-(Date.now()-state.startedAt):0);
+  var hold=state.reduce?0:Math.max(450-(Date.now()-state.titleAt),state.style==='kinetic'?2400-(Date.now()-state.styleAt):0);
   if(hold>0){clearTimeout(state.holdTimer);state.holdTimer=setTimeout(introTryExit,hold);return;}
   introPrepareNoren(state);
   state.leaving=true;clearTimeout(state.deadline);clearTimeout(state.typeTimer);state.el.classList.add('leaving');
