@@ -35,7 +35,7 @@
   /* 深緑にザラザラの質感を足す（静止のグレイン） */
   #grain,.topbar-grain{position:fixed;inset:0;z-index:-1;pointer-events:none;
     background-image:url('grain.png');background-repeat:repeat;background-size:200px 200px;
-    opacity:.6;mix-blend-mode:overlay}
+    opacity:.44;mix-blend-mode:overlay}
   .wrap{max-width:860px;margin:0 auto}
   /* 同じ画面座標・濃さ・アニメーションで上下の背景を連続させる。
      固定背景を帯の範囲だけ切り抜き、スクロールする商品は背面に隠す。 */
@@ -434,6 +434,27 @@
   @keyframes kineticCurtain{0%,18%{opacity:1}100%{opacity:0}}
   @keyframes kineticLift{from{transform:translateY(0) scale(1);opacity:1;filter:blur(0)}to{transform:translateY(-16px) scale(1.03);opacity:0;filter:blur(3px)}}
   @media(prefers-reduced-motion:reduce){.kinetic-part{animation:none;opacity:1;transform:none}.kinetic-spark{display:none}.intro.kinetic.leaving{animation:kineticCurtain .15s linear forwards}.intro.kinetic.leaving>.intro-stage{animation:none}}
+
+  /* 禅：墨の円が静かに漂い、紋章がふわりと浮かび、ロゴタイプが中央から横に展開して静かに引く */
+  .intro.zen{background:var(--bg)}
+  .intro.zen>.intro-stage{position:relative;z-index:1;gap:22px}
+  .intro.zen .kinetic-logo{display:none}
+  .zen-field{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+  .zen-dot{position:absolute;border-radius:50%;background:var(--cream);opacity:0;will-change:transform,opacity;animation:zenDrift var(--dur) ease-in-out var(--delay) both}
+  @keyframes zenDrift{0%{opacity:0;transform:translate(0,0) scale(.82)}32%{opacity:var(--op)}100%{opacity:var(--op);transform:translate(var(--dx),var(--dy)) scale(1)}}
+  .zen-ring{position:absolute;top:50%;left:50%;width:min(64vw,440px);aspect-ratio:1;border:2px solid rgba(244,248,238,.20);border-radius:50%;opacity:0;transform:translate(-50%,-50%) scale(.62);animation:zenRing 2.3s cubic-bezier(.22,1,.36,1) .2s both}
+  @keyframes zenRing{0%{opacity:0;transform:translate(-50%,-50%) scale(.62)}100%{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+  .intro.zen .intro-logo{animation:zenLogoIn 1.5s cubic-bezier(.22,1,.36,1) .5s both}
+  @keyframes zenLogoIn{0%{opacity:0;transform:translateY(8px) scale(.9);filter:blur(7px)}100%{opacity:1;transform:none;filter:blur(0)}}
+  .intro.zen .intro-title{transform-origin:center;opacity:0;animation:zenTitleIn 1.2s cubic-bezier(.22,1,.36,1) 1.3s both}
+  @keyframes zenTitleIn{0%{opacity:0;transform:scaleX(.5)}55%{opacity:1}100%{opacity:1;transform:scaleX(1)}}
+  .intro.zen .intro-caret{display:none !important}
+  .intro.zen.leaving{animation:zenOut 1.2s ease forwards}
+  .intro.zen.leaving>.intro-stage{animation:zenStageOut 1.2s ease forwards}
+  .intro.zen.leaving .zen-field{animation:zenOut 1.2s ease forwards}
+  @keyframes zenOut{0%,28%{opacity:1}100%{opacity:0}}
+  @keyframes zenStageOut{0%{transform:scale(1);opacity:1;filter:blur(0)}100%{transform:scale(1.08);opacity:0;filter:blur(5px)}}
+  @media(prefers-reduced-motion:reduce){.intro.zen .intro-logo,.intro.zen .intro-title{animation:none;opacity:1;transform:none}.zen-dot,.zen-ring{display:none}.intro.zen.leaving{animation:introCurtain .15s linear forwards}.intro.zen.leaving>.intro-stage{animation:none}}
 
 </style>
 </head>
@@ -1378,11 +1399,13 @@ function applyData(d){
 
 function introSetStyle(state,style){
  if(state.leaving)return;
- state.style=['noren','kinetic'].indexOf(style)>=0?style:'zoom';
+ state.style=['noren','kinetic','zen'].indexOf(style)>=0?style:'zoom';
  state.styleAt=Date.now();
- state.exitMs=state.reduce?180:state.style==='noren'?1330:state.style==='kinetic'?700:1100;
+ state.exitMs=state.reduce?180:state.style==='noren'?1330:state.style==='kinetic'?700:state.style==='zen'?1200:1100;
  state.el.classList.toggle('noren',state.style==='noren');
  state.el.classList.toggle('kinetic',state.style==='kinetic');
+ state.el.classList.toggle('zen',state.style==='zen');
+ if(state.style==='zen'){introBuildZen(state);if(!state.reduce){clearTimeout(state.typeTimer);introCompleteTitle(state);}}
  if(state.style==='kinetic'&&!state.reduce){
   clearTimeout(state.typeTimer);
   state.typeTimer=setTimeout(function(){introTypeNext(state);},Math.max(0,1200-(Date.now()-state.startedAt)));
@@ -1394,6 +1417,24 @@ function introSetStyle(state,style){
    var scene=document.createElement('div');scene.className='noren-scene';panel.appendChild(scene);state.el.insertBefore(panel,state.el.firstChild);
   });
  }
+}
+function introBuildZen(state){
+ if(state.zenBuilt)return;state.zenBuilt=true;
+ var field=document.createElement('div');field.className='zen-field';field.setAttribute('aria-hidden','true');
+ var ring=document.createElement('div');ring.className='zen-ring';field.appendChild(ring);
+ for(var i=0;i<14;i++){
+  var d=document.createElement('div');d.className='zen-dot';
+  var sz=(6+Math.random()*26).toFixed(1);
+  d.style.width=sz+'px';d.style.height=sz+'px';
+  d.style.left=(Math.random()*100).toFixed(1)+'%';d.style.top=(Math.random()*100).toFixed(1)+'%';
+  d.style.setProperty('--dx',((Math.random()*2-1)*42).toFixed(1)+'px');
+  d.style.setProperty('--dy',((Math.random()*2-1)*42-8).toFixed(1)+'px');
+  d.style.setProperty('--op',(0.10+Math.random()*0.22).toFixed(2));
+  d.style.setProperty('--dur',(4.2+Math.random()*2.8).toFixed(1)+'s');
+  d.style.setProperty('--delay',(Math.random()*0.8).toFixed(2)+'s');
+  field.appendChild(d);
+ }
+ state.el.insertBefore(field,state.el.firstChild);
 }
 function introLoadStyle(state){
  var resolved=false;
@@ -1447,7 +1488,7 @@ function startIntro(){
 function introReady(){if(INTRO_STATE){INTRO_STATE.ready=true;introTryExit();}}
 function introTryExit(){
   var state=INTRO_STATE;if(!state||!state.min||!state.ready||!state.titleDone||!state.styleReady||state.leaving)return;
-  var hold=state.reduce?0:Math.max(450-(Date.now()-state.titleAt),state.style==='kinetic'?2400-(Date.now()-state.styleAt):0);
+  var hold=state.reduce?0:Math.max(450-(Date.now()-state.titleAt),state.style==='kinetic'?2400-(Date.now()-state.styleAt):state.style==='zen'?3400-(Date.now()-state.styleAt):0);
   if(hold>0){clearTimeout(state.holdTimer);state.holdTimer=setTimeout(introTryExit,hold);return;}
   introPrepareNoren(state);
   state.leaving=true;clearTimeout(state.deadline);clearTimeout(state.typeTimer);state.el.classList.add('leaving');
