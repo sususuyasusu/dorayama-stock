@@ -393,6 +393,11 @@
   .dash-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;margin-bottom:12px}.dash-legend span{display:flex;align-items:center;gap:5px}.dash-legend i{width:9px;height:9px;border-radius:3px;display:inline-block}.dash-empty{padding:28px 10px;text-align:center;color:var(--sub);line-height:1.8}.dash-alert{background:var(--amber-bg);padding:10px 12px;border-radius:9px;color:#805a12;font-size:12px;line-height:1.6}
   @media(max-width:650px){.dash-kpis{grid-template-columns:repeat(2,1fr)}.dash-grid{grid-template-columns:1fr}.dash-head,.dash-card{padding:14px}.navbtn{font-size:10px}.dash-kpis strong{font-size:25px}}
 
+  .dash-money-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;padding:14px 0}
+  .dash-money-grid small{display:block;font-size:12px;color:var(--sub)}
+  .dash-money-grid strong{display:block;font-size:24px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+  .dash-inventory td:not(:first-child){white-space:nowrap}
+  @media(max-width:650px){.dash-money-grid{grid-template-columns:1fr 1fr}.dash-money-grid>div:first-child{grid-column:1/-1}.dash-money-grid strong{font-size:23px}}
 </style>
 </head>
 <body>
@@ -674,14 +679,30 @@ function dashTrend(rows,month){
  counts.forEach(function(v,i){bars+='<rect x="'+(35+i*step)+'" y="'+(150-v/max*120)+'" width="'+Math.max(1,step-3)+'" height="'+v/max*120+'" rx="2" fill="#638e40"><title>'+esc(month)+'-'+(i+1)+'：'+v+'回</title></rect>';if(i===0||(i+1)%5===0)bars+='<text x="'+(35+i*step)+'" y="175">'+(i+1)+'日</text>';});
  return '<svg class="dash-chart" viewBox="0 0 640 190" role="img" aria-label="日別の発注回数"><text x="2" y="30">'+max+'回</text><line x1="35" y1="150" x2="590" y2="150" stroke="#d6d1c5"/>'+bars+'</svg>';
 }
+function dashNumber(v){if(v==null||String(v).trim()==='')return null;var n=Number(v);return Number.isFinite(n)?n:null;}
+function dashYen(n){return '¥'+n.toLocaleString('ja-JP',{maximumFractionDigits:2});}
+function dashValues(items){
+ return items.map(function(it){var p=dashNumber(it.price),s=dashNumber(it.s),w=dashNumber(it.w),q=s!=null&&w!=null?s+w:null;
+  return {id:it.id,name:it.name,price:p!=null&&p>=0?p:null,s:s,w:w,qty:q,value:p!=null&&p>=0&&q!=null?p*q:null};
+ });
+}
+function dashInventory(){
+ var source=DATA.items.filter(function(it){return (DASH.cat==='すべて'||it.cat===DASH.cat)&&(DASH.sup==='すべて'||it.sup===DASH.sup);});
+ var rows=dashValues(source).sort(function(a,b){return (b.value==null?-Infinity:b.value)-(a.value==null?-Infinity:a.value)||a.name.localeCompare(b.name,'ja');});
+ var total=0,store=0,warehouse=0,priced=0;
+ rows.forEach(function(r){if(r.value!=null){total+=r.value;store+=r.price*r.s;warehouse+=r.price*r.w;priced++;}});
+ var tr=rows.map(function(r){return '<tr><td>'+esc(r.name)+'</td><td>'+(r.price==null?'未登録':dashYen(r.price))+'</td><td>'+(r.s==null?'未記録':fmt(r.s))+'</td><td>'+(r.w==null?'未記録':fmt(r.w))+'</td><td>'+(r.qty==null?'未記録':fmt(r.qty))+'</td><td><b>'+(r.value==null?'算出不可':dashYen(r.value))+'</b></td></tr>';}).join('');
+ return '<div class="dash-card dash-inventory"><h3>現在庫の金額・商品別単価</h3><div class="dash-money-grid"><div><small>現在庫金額（計算できた分）</small><strong data-inventory-total>'+dashYen(total)+'</strong></div><div><small>店舗の在庫金額</small><strong>'+dashYen(store)+'</strong></div><div><small>倉庫の在庫金額</small><strong>'+dashYen(warehouse)+'</strong></div></div><p>単価 × 現在庫（店舗＋倉庫）。'+(DASH.cat==='すべて'&&DASH.sup==='すべて'?'全商品':'カテゴリー・発注先の絞り込み')+'が対象です。発注のない商品も含み、選択月を変えても現在の金額を表示します。<br>計算済み '+priced+' / '+rows.length+'品目'+(priced<rows.length?' ／ 単価・在庫未登録の'+(rows.length-priced)+'品目は合計に含みません。':'')+'<br>在庫・単価の更新 '+esc(DATA.updated||'')+'</p><div class="dash-table-wrap"><table aria-label="商品別の単価と現在庫金額"><thead><tr><th>商品</th><th>単価</th><th>店舗在庫</th><th>倉庫在庫</th><th>合計在庫</th><th>現在庫金額</th></tr></thead><tbody>'+tr+'</tbody></table></div>'+(!rows.length?'<div class="dash-empty">この条件の商品はありません。</div>':'')+'</div>';
+}
+
 function renderDashboard(skipLoad){
  if(!DASH.month)DASH.month=dashMonth();
  if(!skipLoad)dashLoad(false);
  var list=document.getElementById('list'),d=DASH.data;
- if(!d){list.innerHTML='<section class="dash"><div class="dash-card"><h3>発注ダッシュボード</h3><div class="dash-empty">'+(DASH.error?esc(DASH.error):'発注履歴を集計しています…')+'</div><button class="histbtn" onclick="dashLoad(true)">再読み込み</button></div></section>';return;}
+ if(!d){list.innerHTML='<section class="dash"><div class="dash-card"><h3>発注ダッシュボード</h3><div class="dash-empty">'+(DASH.error?esc(DASH.error):'発注履歴を集計しています…')+'</div><button class="histbtn" onclick="dashLoad(true)">再読み込み</button></div>'+dashInventory()+'</section>';return;}
  var months=Object.keys(d.months).concat([dashMonth()]).filter(function(v,i,a){return a.indexOf(v)===i;}).sort().reverse();
  var base=(d.months[DASH.month]||{products:[]}).products;
- var cats=['すべて'].concat(Array.from(new Set(base.map(function(r){return r.cat;}))).sort()),sups=['すべて'].concat(Array.from(new Set(base.map(function(r){return r.sup;}))).sort());
+ var cats=['すべて'].concat(Array.from(new Set(base.concat(DATA.items).map(function(r){return r.cat;}))).sort()),sups=['すべて'].concat(Array.from(new Set(base.concat(DATA.items).map(function(r){return r.sup;}))).sort());
  if(cats.indexOf(DASH.cat)<0)DASH.cat='すべて';if(sups.indexOf(DASH.sup)<0)DASH.sup='すべて';
  var rows=dashRanks(base.filter(function(r){return (DASH.cat==='すべて'||r.cat===DASH.cat)&&(DASH.sup==='すべて'||r.sup===DASH.sup);}));
  var total=rows.reduce(function(s,r){return s+r.count;},0),known=rows.reduce(function(s,r){return s+r.qtyKnown;},0),a=rows.filter(function(r){return r.abc==='A';});
@@ -694,6 +715,7 @@ function renderDashboard(skipLoad){
  return '<tr><td>'+esc(r.name)+'</td><td><span class="abc abc-'+r.abc+'">'+r.abc+'</span></td><td>'+r.count+'回</td><td>'+Math.round(r.share*100)+'%</td><td>'+Math.round(r.cum*100)+'%</td><td>'+interval+'</td><td>'+(r.qtyKnown?fmt(r.qty)+(r.qtyKnown<r.count?'（一部）':''):'未記録')+'</td><td>'+r.qtyKnown+'/'+r.count+'</td></tr>';}).join('');
  list.innerHTML='<section class="dash"><div class="dash-head"><h2>発注ダッシュボード</h2><div class="dash-filters"><select aria-label="集計月" onchange="dashChange(\'month\',this.value)">'+dashOptions(months,DASH.month)+'</select><select aria-label="分析カテゴリー" onchange="dashChange(\'cat\',this.value)">'+dashOptions(cats,DASH.cat)+'</select><select aria-label="分析発注先" onchange="dashChange(\'sup\',this.value)">'+dashOptions(sups,DASH.sup)+'</select><button onclick="dashLoad(true)">'+(DASH.loading?'更新中…':'更新')+'</button></div><p>月別発注実績 ／ 集計更新 '+esc(d.updated)+'<br>商品分類・発注先は現在の商品マスタを使用。今月は月初から更新時点まで。</p>'+(DASH.error?'<div class="dash-alert">'+esc(DASH.error)+' 保存済みの集計を表示しています。</div>':'')+(d.invalidDates?'<div class="dash-alert">日時を読み取れない発注履歴 '+d.invalidDates+'件は集計対象外です。</div>':'')+'</div>'
  +'<div class="dash-kpis">'+[['発注回数',total+'回','履歴に記録された商品別の発注'],['発注した商品',rows.length+'品目','選択した月・条件'],['Aランク',a.length+'品目','発注回数が集中する商品'],['数量の記録率',(total?Math.round(known/total*100):0)+'%','数量入力済み '+known+'/'+total+'件']].map(function(k){return '<div class="dash-card"><small>'+k[0]+'</small><strong>'+k[1]+'</strong><p>'+k[2]+'</p></div>';}).join('')+'</div>'
+ +dashInventory()
  +'<div class="dash-grid"><div class="dash-card"><h3>ABC分析・パレート図</h3><div class="dash-legend"><span><i style="background:#d8552c"></i>A</span><span><i style="background:#d9ae4d"></i>B</span><span><i style="background:#638e40"></i>C</span><span>深緑の線：累積構成比</span></div>'+dashPareto(rows)+'<p>発注回数の多い順に累積80%までをA、95%までをB、残りをCとします。境界をまたぐ商品は手前のランク、同じ回数の場合は商品名順で区分します。金額・消費量のABCではありません。</p></div><div class="dash-card"><h3>発注先別の発注回数</h3>'+(entries.length?dashBars(entries):'<div class="dash-empty">発注記録はありません</div>')+'</div></div>'
  +'<div class="dash-grid"><div class="dash-card"><h3>日別の発注推移</h3>'+dashTrend(rows,DASH.month)+'<p>同じ日に複数商品を発注した場合は、商品ごとに数えます。</p></div><div class="dash-card"><h3>現在の在庫バランス</h3>'+stock+'<p>全商品を対象とした現在値です。選択月の過去在庫ではありません。<br>在庫更新 '+esc(DATA.updated||'')+'</p></div></div>'
  +'<div class="dash-card"><h3>商品別の発注数・頻度</h3><p>発注間隔は、その月の発注日の間隔の平均です（同日内の重複は1日）。数量は入力された実績のみ。単位が異なるため商品間で合算せず、空欄を発注ロットで補いません。</p><div class="dash-table-wrap"><table><thead><tr><th>商品</th><th>ABC</th><th>発注回数</th><th>構成比</th><th>累積</th><th>平均発注間隔</th><th>記録済み数量</th><th>数量記録件数</th></tr></thead><tbody>'+tr+'</tbody></table></div>'+(!rows.length?'<div class="dash-empty">この月・条件の発注記録はありません。</div>':'')+'</div></section>';
