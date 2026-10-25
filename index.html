@@ -29,7 +29,7 @@
   #bgpat,.topbar-pattern{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
   #bgpat::before,.topbar-pattern::before{content:"";position:absolute;top:0;left:0;height:100%;width:300%;
     background-image:url('bg-pattern-v2.svg');background-repeat:repeat;background-size:230px 230px;
-    opacity:.10;will-change:transform;animation:bgslide 80s linear infinite}
+    opacity:.10;will-change:transform;animation:bgslide 26s linear infinite}
   @keyframes bgslide{from{transform:translateX(0)}to{transform:translateX(-230px)}}
   @media (prefers-reduced-motion:reduce){#bgpat::before,.topbar-pattern::before{animation:none}}
   /* 深緑にザラザラの質感を足す（静止のグレイン） */
@@ -360,9 +360,40 @@
   @media (prefers-reduced-motion: reduce){
     *{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
   }
+  /* 起動時だけ：ロゴ → 在庫管理 → 手前へ抜けて一覧へ */
+  .intro{position:fixed;inset:0;z-index:2000;background:var(--bg);display:grid;place-items:center;
+    overflow:hidden;animation:introFailsafe 8s step-end forwards}
+  .intro-stage{display:flex;flex-direction:column;align-items:center;gap:26px;transform-origin:center;will-change:transform,opacity}
+  .intro-logo{display:block;width:clamp(150px,23vw,205px);height:auto;opacity:0;animation:introRise .85s cubic-bezier(.16,1,.3,1) .12s both}
+  .intro-title{display:block;width:clamp(200px,30vw,270px);height:auto;opacity:0;animation:introRise .8s cubic-bezier(.16,1,.3,1) .68s both}
+  .intro.leaving{animation:introCurtain .95s ease-in forwards}
+  .intro.leaving .intro-stage{animation:introApproach .95s cubic-bezier(.55,.04,.82,.32) forwards}
+  @keyframes introRise{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes introApproach{0%{transform:scale(1);opacity:1}30%{transform:scale(1.12);opacity:1}75%{opacity:.85}100%{transform:scale(18);opacity:0}}
+  @keyframes introCurtain{0%,35%{opacity:1}100%{opacity:0}}
+  @keyframes introFailsafe{to{visibility:hidden;pointer-events:none}}
+  @media(prefers-reduced-motion:reduce){
+    .intro-logo,.intro-title{animation:none;opacity:1;transform:none}
+    .intro.leaving{animation:introCurtain .15s linear forwards}
+    .intro.leaving .intro-stage{animation:none}
+  }
+  .dash{grid-column:1/-1;display:grid;gap:14px;margin:6px 0 24px;color:var(--ink)}
+  .dash-head,.dash-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;min-width:0;box-shadow:var(--shadow)}
+  .dash-head h2{font-size:22px;margin:0 0 10px}.dash p{font-size:12px;line-height:1.7;color:var(--sub);margin:8px 0}
+  .dash-filters{display:flex;gap:8px;flex-wrap:wrap}.dash-filters select,.dash-filters button{max-width:100%;background:var(--card);border:1px solid var(--line);border-radius:9px;padding:8px;color:var(--ink);font:inherit;font-size:13px}
+  .dash-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.dash-kpis .dash-card{padding:15px}.dash-kpis strong{display:block;font-size:28px;margin-top:8px}.dash-kpis small{font-size:12px;color:var(--sub)}
+  .dash-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:14px}.dash h3{font-size:16px;margin:0 0 12px}.dash-chart{width:100%;height:auto;display:block}.dash-chart text{font-family:inherit;fill:var(--sub);font-size:12px}
+  .dash-bars{display:grid;gap:12px}.dash-bar-label{display:flex;justify-content:space-between;font-size:12px;gap:10px;margin-bottom:5px}.dash-bar-track{height:9px;border-radius:6px;background:var(--track);overflow:hidden}.dash-bar-fill{height:100%;border-radius:6px;background:var(--green)}
+  .dash-table-wrap{overflow-x:auto}.dash table{border-collapse:collapse;width:100%;font-size:12px;min-width:640px}.dash th,.dash td{text-align:left;padding:11px 8px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}.dash th{color:var(--sub);font-size:11px}.dash td:first-child{min-width:150px}.abc{border-radius:6px;padding:3px 7px;font-weight:800}.abc-A{background:#f9ddd3;color:#aa3c19}.abc-B{background:#faedc3;color:#8a6200}.abc-C{background:#e0ebd4;color:#436b28}
+  .dash-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;margin-bottom:12px}.dash-legend span{display:flex;align-items:center;gap:5px}.dash-legend i{width:9px;height:9px;border-radius:3px;display:inline-block}.dash-empty{padding:28px 10px;text-align:center;color:var(--sub);line-height:1.8}.dash-alert{background:var(--amber-bg);padding:10px 12px;border-radius:9px;color:#805a12;font-size:12px;line-height:1.6}
+  @media(max-width:650px){.dash-kpis{grid-template-columns:repeat(2,1fr)}.dash-grid{grid-template-columns:1fr}.dash-head,.dash-card{padding:14px}.navbtn{font-size:10px}.dash-kpis strong{font-size:25px}}
+
 </style>
 </head>
 <body>
+<div class="intro" id="intro" role="status" aria-label="在庫管理を読み込み中">
+  <div class="intro-stage"><img class="intro-logo" src="intro-logo.svg" alt="どら山" fetchpriority="high"><img class="intro-title" src="intro-title.svg" alt="在庫管理" fetchpriority="high"></div>
+</div>
 <div id="grain"></div>
 <div id="bgpat"></div>
 <div class="wrap">
@@ -399,6 +430,7 @@
   <button class="navbtn" data-tab="要発注"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 10.2v3.1c0 1.7.8 2.8 1.9 3.8H4.6c1.1-1 1.9-2.1 1.9-3.8v-3.1a5.5 5.5 0 0 1 9-4.2"/><path d="M10 20h4"/><circle cx="18.4" cy="5.3" r="2.3" fill="currentColor" stroke="none"/></svg><span class="navbadge" id="nbadge" style="display:none">0</span></span>要発注リスト</button>
   <button class="navbtn" data-tab="毎日"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="16" rx="2.7"/><path d="M7.6 2.9v3.2M16.4 2.9v3.2M3.5 9.2h17"/><path d="m8.3 15 2.7 2.5 4.8-5"/></svg></span>チェックリスト</button>
   <button class="navbtn" data-tab="商品"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2.7 8.2 4.5v9.4L12 21.2l-8.2-4.6V7.2L12 2.7Z"/><path d="m3.8 7.2 8.2 4.6 8.2-4.6M12 11.8v9.4M8 4.9l8.3 4.5v3.3"/></svg></span>商品一覧</button>
+  <button class="navbtn" data-tab="分析"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10h4v10M10 20V4h4v16M16 20v-7h4v7"/></svg></span>ダッシュボード</button>
 </nav>
 
 <div class="modal" id="detail"><div class="sheet" id="detailBody"></div></div>
@@ -591,6 +623,77 @@ function itemById(id){ for(var i=0;i<DATA.items.length;i++){ if(String(DATA.item
 function phThumb(cat){ var d=document.createElement('div'); d.className='thumb ph'; d.textContent=(cat||'').slice(0,2); return d; }
 function isUrl(s){ return /^https?:\/\//i.test((""+(s||"")).trim()); }
 
+var DASH={data:null,loading:false,error:'',month:'',cat:'すべて',sup:'すべて',loaded:0};
+function dashMonth(){return new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit'}).format(new Date());}
+function dashLoad(force){
+ if(DASH.loading||(!force&&DASH.data&&Date.now()-DASH.loaded<60000))return;
+ DASH.loading=true;DASH.error='';
+ var ac=new AbortController(),timer=setTimeout(function(){ac.abort();},12000);
+ fetch('data.json?dashboard='+Date.now(),{signal:ac.signal}).then(function(r){if(!r.ok)throw Error();return r.json();}).then(function(d){
+  if(!d.analytics)throw Error('分析データがまだ作成されていません');
+  if(d.analytics.error)throw Error(d.analytics.error);
+  DASH.data=d.analytics;DASH.loaded=Date.now();
+ }).catch(function(e){DASH.error=e.message&&e.message.indexOf('分析')>=0?e.message:'発注履歴を取得できませんでした。再読み込みしてください。';})
+ .finally(function(){clearTimeout(timer);DASH.loading=false;if(STATE.tab==='分析')renderDashboard(true);});
+}
+function dashChange(key,value){DASH[key]=value;renderDashboard(true);}
+function dashRanks(rows){
+ rows=rows.slice().sort(function(a,b){return b.count-a.count||a.name.localeCompare(b.name,'ja');});
+ var total=rows.reduce(function(s,r){return s+r.count;},0),cum=0;
+ return rows.map(function(r){var before=cum;cum+=r.count;
+  return Object.assign({},r,{share:total?r.count/total:0,cum:total?cum/total:0,abc:!total?'—':before/total<.8?'A':before/total<.95?'B':'C'});
+ });
+}
+function dashOptions(values,current){return values.map(function(v){return '<option'+(v===current?' selected':'')+'>'+esc(v)+'</option>';}).join('');}
+function dashBars(entries){
+ var max=Math.max.apply(null,entries.map(function(e){return e[1];}).concat([1]));
+ return '<div class="dash-bars">'+entries.map(function(e){return '<div><div class="dash-bar-label"><span>'+esc(e[0])+'</span><b>'+e[1]+'回</b></div><div class="dash-bar-track"><div class="dash-bar-fill" style="width:'+e[1]/max*100+'%"></div></div></div>';}).join('')+'</div>';
+}
+function dashPareto(rows){
+ if(!rows.length)return '<div class="dash-empty">この条件の発注記録はありません</div>';
+ var n=rows.length,w=640,h=230,left=38,top=15,bottom=190,plot=550,step=plot/n,max=rows[0].count;
+ var bars='',points=[],labels='';
+ rows.forEach(function(r,i){var x=left+i*step,y=bottom-r.count/max*150;
+ bars+='<rect x="'+(x+1)+'" y="'+y+'" width="'+Math.max(1,step-3)+'" height="'+(bottom-y)+'" rx="2" fill="'+({A:'#d8552c',B:'#d9ae4d',C:'#638e40'}[r.abc])+'"><title>'+esc(r.name)+'：'+r.count+'回・累積'+Math.round(r.cum*100)+'%</title></rect>';
+ points.push((x+step/2)+','+(bottom-r.cum*175));
+ if(i===0||i===n-1||(i+1)%Math.max(1,Math.ceil(n/8))===0)labels+='<text x="'+(x+step/2)+'" y="210" text-anchor="middle">'+(i+1)+'</text>';
+ });
+ return '<svg class="dash-chart" viewBox="0 0 '+w+' '+h+'" role="img" aria-label="発注回数の多い商品順。棒は発注回数、線は累積構成比"><line x1="38" y1="190" x2="590" y2="190" stroke="#d6d1c5"/><text x="4" y="44">'+max+'回</text><text x="3" y="190">0</text><text x="595" y="22">100%</text><text x="595" y="105">50%</text>'+bars+'<polyline points="'+points.join(' ')+'" fill="none" stroke="#234e3b" stroke-width="3"/>'+labels+'<text x="315" y="228" text-anchor="middle">商品順位（全'+n+'品目）</text></svg>';
+}
+function dashTrend(rows,month){
+ var parts=month.split('-').map(Number),days=new Date(parts[0],parts[1],0).getDate(),counts=Array(days).fill(0);
+ var all=DASH.data.months[month],filtered=!(DASH.cat==='すべて'&&DASH.sup==='すべて');
+ if(filtered){rows.forEach(function(r){Object.keys(r.daily||{}).forEach(function(d){counts[+d.slice(-2)-1]+=r.daily[d];});});}
+ else if(all)Object.keys(all.daily).forEach(function(d){counts[+d.slice(-2)-1]=all.daily[d];});
+ var max=Math.max.apply(null,counts.concat([1])),bars='',step=550/days;
+ counts.forEach(function(v,i){bars+='<rect x="'+(35+i*step)+'" y="'+(150-v/max*120)+'" width="'+Math.max(1,step-3)+'" height="'+v/max*120+'" rx="2" fill="#638e40"><title>'+esc(month)+'-'+(i+1)+'：'+v+'回</title></rect>';if(i===0||(i+1)%5===0)bars+='<text x="'+(35+i*step)+'" y="175">'+(i+1)+'日</text>';});
+ return '<svg class="dash-chart" viewBox="0 0 640 190" role="img" aria-label="日別の発注回数"><text x="2" y="30">'+max+'回</text><line x1="35" y1="150" x2="590" y2="150" stroke="#d6d1c5"/>'+bars+'</svg>';
+}
+function renderDashboard(skipLoad){
+ if(!DASH.month)DASH.month=dashMonth();
+ if(!skipLoad)dashLoad(false);
+ var list=document.getElementById('list'),d=DASH.data;
+ if(!d){list.innerHTML='<section class="dash"><div class="dash-card"><h3>発注ダッシュボード</h3><div class="dash-empty">'+(DASH.error?esc(DASH.error):'発注履歴を集計しています…')+'</div><button class="histbtn" onclick="dashLoad(true)">再読み込み</button></div></section>';return;}
+ var months=Object.keys(d.months).concat([dashMonth()]).filter(function(v,i,a){return a.indexOf(v)===i;}).sort().reverse();
+ var base=(d.months[DASH.month]||{products:[]}).products;
+ var cats=['すべて'].concat(Array.from(new Set(base.map(function(r){return r.cat;}))).sort()),sups=['すべて'].concat(Array.from(new Set(base.map(function(r){return r.sup;}))).sort());
+ if(cats.indexOf(DASH.cat)<0)DASH.cat='すべて';if(sups.indexOf(DASH.sup)<0)DASH.sup='すべて';
+ var rows=dashRanks(base.filter(function(r){return (DASH.cat==='すべて'||r.cat===DASH.cat)&&(DASH.sup==='すべて'||r.sup===DASH.sup);}));
+ var total=rows.reduce(function(s,r){return s+r.count;},0),known=rows.reduce(function(s,r){return s+r.qtyKnown;},0),a=rows.filter(function(r){return r.abc==='A';});
+ var suppliers={};rows.forEach(function(r){suppliers[r.sup]=(suppliers[r.sup]||0)+r.count;});
+ var entries=Object.keys(suppliers).map(function(k){return [k,suppliers[k]];}).sort(function(a,b){return b[1]-a[1];});
+ var risk={不足:0,到着待ち:0,在庫わずか:0,十分:0};DATA.items.forEach(function(it){var c=classify(it),k=c.gk==='今すぐ発注'?'不足':c.gk;risk[k]=(risk[k]||0)+1;});
+ var riskTotal=DATA.items.length||1,colors=['#d8552c','#5a8ba9','#d9ae4d','#638e40'];
+ var stock='<div style="display:flex;height:18px;border-radius:8px;overflow:hidden;margin:18px 0">'+Object.keys(risk).map(function(k,i){return '<span style="width:'+risk[k]/riskTotal*100+'%;background:'+colors[i]+'" title="'+k+' '+risk[k]+'品目"></span>';}).join('')+'</div><div class="dash-legend">'+Object.keys(risk).map(function(k,i){return '<span><i style="background:'+colors[i]+'"></i>'+k+' '+risk[k]+'品目</span>';}).join('')+'</div>';
+ var tr=rows.map(function(r){var dates=r.days||[],interval=dates.length>1?((new Date(dates[dates.length-1]+'T00:00:00+09:00')-new Date(dates[0]+'T00:00:00+09:00'))/86400000/(dates.length-1)).toFixed(1)+'日':'—';
+ return '<tr><td>'+esc(r.name)+'</td><td><span class="abc abc-'+r.abc+'">'+r.abc+'</span></td><td>'+r.count+'回</td><td>'+Math.round(r.share*100)+'%</td><td>'+Math.round(r.cum*100)+'%</td><td>'+interval+'</td><td>'+(r.qtyKnown?fmt(r.qty)+(r.qtyKnown<r.count?'（一部）':''):'未記録')+'</td><td>'+r.qtyKnown+'/'+r.count+'</td></tr>';}).join('');
+ list.innerHTML='<section class="dash"><div class="dash-head"><h2>発注ダッシュボード</h2><div class="dash-filters"><select aria-label="集計月" onchange="dashChange(\'month\',this.value)">'+dashOptions(months,DASH.month)+'</select><select aria-label="分析カテゴリー" onchange="dashChange(\'cat\',this.value)">'+dashOptions(cats,DASH.cat)+'</select><select aria-label="分析発注先" onchange="dashChange(\'sup\',this.value)">'+dashOptions(sups,DASH.sup)+'</select><button onclick="dashLoad(true)">'+(DASH.loading?'更新中…':'更新')+'</button></div><p>月別発注実績 ／ 集計更新 '+esc(d.updated)+'<br>商品分類・発注先は現在の商品マスタを使用。今月は月初から更新時点まで。</p>'+(DASH.error?'<div class="dash-alert">'+esc(DASH.error)+' 保存済みの集計を表示しています。</div>':'')+(d.invalidDates?'<div class="dash-alert">日時を読み取れない発注履歴 '+d.invalidDates+'件は集計対象外です。</div>':'')+'</div>'
+ +'<div class="dash-kpis">'+[['発注回数',total+'回','履歴に記録された商品別の発注'],['発注した商品',rows.length+'品目','選択した月・条件'],['Aランク',a.length+'品目','発注回数が集中する商品'],['数量の記録率',(total?Math.round(known/total*100):0)+'%','数量入力済み '+known+'/'+total+'件']].map(function(k){return '<div class="dash-card"><small>'+k[0]+'</small><strong>'+k[1]+'</strong><p>'+k[2]+'</p></div>';}).join('')+'</div>'
+ +'<div class="dash-grid"><div class="dash-card"><h3>ABC分析・パレート図</h3><div class="dash-legend"><span><i style="background:#d8552c"></i>A</span><span><i style="background:#d9ae4d"></i>B</span><span><i style="background:#638e40"></i>C</span><span>深緑の線：累積構成比</span></div>'+dashPareto(rows)+'<p>発注回数の多い順に累積80%までをA、95%までをB、残りをCとします。境界をまたぐ商品は手前のランク、同じ回数の場合は商品名順で区分します。金額・消費量のABCではありません。</p></div><div class="dash-card"><h3>発注先別の発注回数</h3>'+(entries.length?dashBars(entries):'<div class="dash-empty">発注記録はありません</div>')+'</div></div>'
+ +'<div class="dash-grid"><div class="dash-card"><h3>日別の発注推移</h3>'+dashTrend(rows,DASH.month)+'<p>同じ日に複数商品を発注した場合は、商品ごとに数えます。</p></div><div class="dash-card"><h3>現在の在庫バランス</h3>'+stock+'<p>全商品を対象とした現在値です。選択月の過去在庫ではありません。<br>在庫更新 '+esc(DATA.updated||'')+'</p></div></div>'
+ +'<div class="dash-card"><h3>商品別の発注数・頻度</h3><p>発注間隔は、その月の発注日の間隔の平均です（同日内の重複は1日）。数量は入力された実績のみ。単位が異なるため商品間で合算せず、空欄を発注ロットで補いません。</p><div class="dash-table-wrap"><table><thead><tr><th>商品</th><th>ABC</th><th>発注回数</th><th>構成比</th><th>累積</th><th>平均発注間隔</th><th>記録済み数量</th><th>数量記録件数</th></tr></thead><tbody>'+tr+'</tbody></table></div>'+(!rows.length?'<div class="dash-empty">この月・条件の発注記録はありません。</div>':'')+'</div></section>';
+}
+
 function render(){
   if(!DATA){ return; }
   var tab=STATE.tab;
@@ -611,17 +714,18 @@ function render(){
   var showHero=(tab==="要発注");
   var showChips=(tab==="商品"||tab==="毎日");
   var showSup=(tab==="要発注"||tab==="商品"||tab==="毎日");
-  var showControls=true;
-  var showSearch=true;
+  var showControls=(tab!=="分析");
+  var showSearch=(tab!=="分析");
   document.getElementById('hero').className="hero"+(showHero?"":" hide");
   document.getElementById('controls').className="controls"+(showControls?"":" hide");
   document.getElementById('chips').className="chips"+(showChips?"":" hide");
   document.getElementById('supwrap').className="selwrap"+(showSup?"":" hide");
   document.querySelector('.search').style.display=showSearch?"":"none";
-  document.getElementById('fab').className="fab"+((tab==="毎日")?" hide":"");
+  document.getElementById('fab').className="fab"+((tab==="毎日"||tab==="分析")?" hide":"");
   document.getElementById('foot').style.display=(tab==="要発注"||tab==="商品")?"":"none";
 
   var list=document.getElementById('list');
+  if(tab==="分析"){renderDashboard();return;}
 
   // 集計カード（要発注タブ）
   var items = DATA.items.map(function(it){ return {it:it,c:classify(it)}; });
@@ -1200,6 +1304,26 @@ function applyData(d){
   }); }
   if(d && d.checked){ CHECKED={}; d.checked.forEach(function(x){ CHECKED[String(x)]=1; }); }
   DATA=d; document.getElementById('upd').textContent=d.updated||""; render();
+  introReady();
+}
+
+var INTRO_STATE=null;
+function startIntro(){
+  if(INTRO_STATE) return;
+  var el=document.getElementById('intro'); if(!el)return;
+  var reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var state=INTRO_STATE={el:el,min:false,ready:false,leaving:false,exitMs:reduce?180:1000};
+  setTimeout(function(){state.min=true;introTryExit();},reduce?200:1800);
+  state.deadline=setTimeout(function(){
+    if(!state.ready && !DATA){document.getElementById('list').innerHTML='<div class="empty">読み込みに時間がかかっています。通信状況を確認して、再読み込みしてください。</div>';}
+    state.min=true;state.ready=true;introTryExit();
+  },6000);
+}
+function introReady(){if(INTRO_STATE){INTRO_STATE.ready=true;introTryExit();}}
+function introTryExit(){
+  var state=INTRO_STATE;if(!state||!state.min||!state.ready||state.leaving)return;
+  state.leaving=true;clearTimeout(state.deadline);state.el.classList.add('leaving');
+  setTimeout(function(){state.el.remove();},state.exitMs);
 }
 
 // 公開版が新しくなっていたら、開いたときに自動で読み込み直す（ホーム画面アプリ等のキャッシュ対策）
@@ -1219,6 +1343,7 @@ function checkUpdate(){
   }catch(e){}
 }
 function boot(){
+  startIntro();
   checkUpdate();
   setTimeout(function(){ try{ loadThree(function(){}); }catch(e){} }, 5000);   // 3Dライブラリを静かに先読み（提出お祝いを即出すため）
   document.addEventListener('pointerdown',function(){ LAST_ACT=Date.now(); unlockAudio(); }, true);
@@ -1247,6 +1372,7 @@ function boot(){
       if(GAS_URL){ gasLoad(function(live){ if(live && live.items && live.items.length) applyData(live); }); }
     }).catch(function(){
       document.getElementById('list').innerHTML='<div class="empty">データを読み込めませんでした。<br>時間をおいて再読み込みしてください。</div>';
+      introReady();
     });
   });
 }
