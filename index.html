@@ -1110,11 +1110,15 @@ function setText(id,field,val){
   });
 }
 
+var INFLIGHT={};
 function doOrder(id){
   var it=itemById(id); if(!it) return;
   if(!GAS_URL){ toast("保存はMacで1回承認後に有効になります"); return; }
+  if(INFLIGHT[id]) return;                 // 二重押し防止
+  INFLIGHT[id]=1;
   it.ordered=true; refreshAll(id);
   gasJsonp({action:"order",id:id},function(resp){
+    INFLIGHT[id]=0;
     if(resp&&resp.ok){ it.ordered=!!resp.ordered; it.oeta=resp.oeta||""; sfx('success'); burstConfetti(); toast("発注を記録しました"); reloadLive(); }
     else { it.ordered=false; toast(saveErr(resp)); }
     refreshAll(id);
@@ -1123,10 +1127,15 @@ function doOrder(id){
 function doReceive(id){
   var it=itemById(id); if(!it) return;
   if(!GAS_URL){ toast("保存はMacで1回承認後に有効になります"); return; }
+  if(INFLIGHT[id]) return;                 // 二重押し防止（連打しても1回だけ送る）
+  INFLIGHT[id]=1;
   var el=document.getElementById('rqty'); var qty=el?(el.value||""):"";
+  var pO=it.ordered, pE=it.oeta;
+  it.ordered=false; it.oeta=""; sfx('tick'); toast("受領を記録中…"); refreshAll(id);  // 押した瞬間に即反映
   gasJsonp({action:"receive",id:id,qty:qty},function(resp){
+    INFLIGHT[id]=0;
     if(resp&&resp.ok){ it.ordered=false; it.oeta=""; if(resp.warehouse!=null){ it.w=Number(resp.warehouse); it.total=it.w+it.s; } sfx('success'); burstConfetti(); toast("受領を記録しました"); reloadLive(); }
-    else toast(saveErr(resp));
+    else { it.ordered=pO; it.oeta=pE; toast(saveErr(resp)); }   // 失敗時は元の「到着待ち」に戻す
     refreshAll(id);
   });
 }
