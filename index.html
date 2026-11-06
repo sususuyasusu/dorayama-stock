@@ -840,7 +840,7 @@ function renderContents(){
   var groupKey=null;   // null＝グループ無し（毎日チェックは全品フラット・並び順そのまま）
   if(tab==="要発注"){ groupKey=function(x){ return x.c.gk==="到着待ち"?"発注済み":"未発注"; };
     rows.sort(function(a,b){ var ga=(a.c.gk==="到着待ち")?1:0, gb=(b.c.gk==="到着待ち")?1:0; if(ga!==gb)return ga-gb; return a.c.pri-b.c.pri; }); }
-  else if(tab==="毎日"){ var FO={"毎日":0,"月・水・金":1,"週一(日)":2};   // 発注確認頻度でグループ分け
+  else if(tab==="毎日"){ var FO={"毎日":0,"月・水・金":1,"週一(月)":2};   // 発注確認頻度でグループ分け
     groupKey=function(x){ return String(x.it.freq||"").trim()||"その他"; };
     rows.sort(function(a,b){ var fa=FO[String(a.it.freq||"").trim()], fb=FO[String(b.it.freq||"").trim()]; if(fa==null)fa=9; if(fb==null)fb=9; if(fa!==fb)return fa-fb; return a.c.pri-b.c.pri; }); }
   else if(tab==="商品"){ groupKey=function(x){ return x.it.cat; };   // カテゴリー順
@@ -888,11 +888,11 @@ function renderContents(){
   });
 }
 
-// 今日に確認すべき発注確認頻度か（曜日で自動判定）。毎日=常に／月・水・金=月水金／週一(日)=日曜。
+// 今日に確認すべき発注確認頻度か（曜日で自動判定）。毎日=常に／月・水・金=月水金／週一(月)=月曜。
 function freqDueToday(f){ f=String(f||"").trim(); if(f==="毎日") return true;
   var d=new Date().getDay();   // 0=日 1=月 2=火 3=水 4=木 5=金 6=土
   if(f==="月・水・金") return (d===1||d===3||d===5);
-  if(f==="週一(日)") return (d===0);
+  if(f==="週一(月)") return (d===1);
   return false; }
 // チェックリスト＝発注確認頻度ごとのチェックリスト。✓は当日ぶんをこの端末に保存し翌日リセット。
 // 完了状態は全端末で共有（GASの「チェック状態」シート・当日ぶん）。CHECKEDは読み込み時に同期。
@@ -933,7 +933,7 @@ function submitCheck(){
   var due=dueItems(), done=0, undone=[];
   due.forEach(function(it){ if(chkIs(it.id)) done++; else undone.push(it.name); });
   var wd=['日','月','火','水','木','金','土'][new Date().getDay()];
-  var sc=[]; ['毎日','月・水・金','週一(日)'].forEach(function(f){ if(due.some(function(it){return String(it.freq||'').trim()===f;})) sc.push(f); });
+  var sc=[]; ['毎日','月・水・金','週一(月)'].forEach(function(f){ if(due.some(function(it){return String(it.freq||'').trim()===f;})) sc.push(f); });
   var btn=document.querySelector('.subbtn'); if(btn){ btn.textContent='送信中…'; btn.className='subbtn busy'; }
   gasJsonp({action:'submitcheck',name:name,weekday:wd,scope:sc.join('・'),done:done,total:due.length,undone:undone.join('、')},function(resp){
     if(btn){ btn.textContent='提出'; btn.className='subbtn'; }
@@ -1185,7 +1185,7 @@ function renderDetail(id){
   // 選択肢
   var catOpts=distinct('cat',['未分類']); if(catOpts.indexOf(it.cat)<0 && it.cat) catOpts.push(it.cat);
   var supOpts=distinct('sup',['その他']); if(supOpts.indexOf(it.sup)<0 && it.sup) supOpts.push(it.sup);
-  var freqOpts=['','毎日','月・水・金','週一(日)'];
+  var freqOpts=['','毎日','月・水・金','週一(月)'];
   // 上部アクション（AppSheet: リンクを開く／在庫ダッシュボードを見る）
   var openLink = isUrl(it.ref) ? '<button class="pbtn o" onclick="window.open(\''+esc(it.ref)+'\',\'_blank\')">🔗 リンクを開く（発注サイト）</button>' : '';
   // 発注/受領
@@ -1240,7 +1240,7 @@ function openAdd(){
   var set={}; DATA.items.forEach(function(it){ if(it.sup)set[it.sup]=1; }); var slist=Object.keys(set); if(slist.indexOf("その他")<0) slist.push("その他");
   var cset={}; DATA.items.forEach(function(it){ if(it.cat)cset[it.cat]=1; }); var clist=Object.keys(cset); if(clist.indexOf("未分類")<0) clist.push("未分類");
   function opts(arr,def){ return arr.map(function(a){ return '<option'+(a===def?" selected":"")+'>'+esc(a)+'</option>'; }).join(""); }
-  var freqAddOpts=['','毎日','月・水・金','週一(日)'].map(function(f){ return '<option value="'+esc(f)+'">'+(f===''?'（未設定）':esc(f))+'</option>'; }).join("");
+  var freqAddOpts=['','毎日','月・水・金','週一(月)'].map(function(f){ return '<option value="'+esc(f)+'">'+(f===''?'（未設定）':esc(f))+'</option>'; }).join("");
   PENDING_ADD_IMG="";
   document.getElementById('addBody').innerHTML=
      '<div class="shead"><div class="nm">商品を追加</div><button class="x" onclick="closeAdd()">✕</button></div>'
