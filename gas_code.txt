@@ -241,6 +241,24 @@ function listCheckHist_(n){
   return out;
 }
 
+// ===== 発注サイトにログインできない（店舗iPadからの知らせ）=====
+// 記録だけ行う。Mac mini の見張り(~/dw-stock-tools/login_help_watch.py)が数分おきに読んで鈴木さんへメールする。
+var LOGINHELP_NAME = 'ログイン困りごと';
+function doLoginHelp_(p){
+  if (p.token !== TOKEN) return { ok:false, error:'auth' };
+  var id = String(p.id||'').trim(); if (!id) return { ok:false, error:'id' };
+  var lock = LockService.getScriptLock(); lock.waitLock(8000);
+  try {
+    var ss = SpreadsheetApp.openById(SHEET_ID); var sh = ss.getSheetByName(LOGINHELP_NAME);
+    if (!sh){ sh = ss.insertSheet(LOGINHELP_NAME); sh.appendRow(['日時','商品ID','品名','発注先','サイト','担当者','メモ']); }
+    var f = findRow_(sheet_(), id); var name = '', sup = '';
+    if (f){ var hn = f.head.indexOf('商品名'), hs = f.head.indexOf('発注先'), rv = f.vals[f.row-1];
+      if (hn>=0) name = String(rv[hn]||''); if (hs>=0) sup = String(rv[hs]||''); }
+    sh.appendRow([ nowStr_(), id, name, sup, String(p.site||'').slice(0,80), String(p.name||'').slice(0,40), String(p.note||'').slice(0,200) ]);
+    return { ok:true };
+  } finally { lock.releaseLock(); }
+}
+
 // ===== チェックリストの完了状態（全端末で共有・当日ぶん） =====
 var CHKSTATE_NAME = 'チェック状態';
 function chkStateSheet_(){
@@ -319,6 +337,7 @@ function doGet(e){
     else if (a==='submitcheck') out=doSubmitCheck_(e.parameter);
     else if (a==='checkhist') out={ ok:true, hist:listCheckHist_(60) };
     else if (a==='chkset') out=doChkSet_(e.parameter);
+    else if (a==='loginhelp') out=doLoginHelp_(e.parameter);
     else out={ ok:true, updated:Utilities.formatDate(new Date(),'Asia/Tokyo','yyyy-MM-dd HH:mm'), items:readAll_(), checked:checkedToday_() };
   } catch(err){ out={ ok:false, error:String(err) }; }
   var txt=JSON.stringify(out); var cb=e.parameter.callback;
