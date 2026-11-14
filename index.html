@@ -451,7 +451,6 @@
 <div class="modal" id="detail"><div class="sheet" id="detailBody"></div></div>
 <div class="modal" id="addm"><div class="sheet" id="addBody"></div></div>
 <div class="modal" id="histm"><div class="sheet" id="histBody"></div></div>
-<div class="modal" id="loginm"><div class="sheet" id="loginBody"></div></div>
 <input type="file" id="imgfile" accept="image/*" style="display:none" onchange="onImgPick(this)">
 <input type="file" id="a_imgfile" accept="image/*" style="display:none" onchange="onAddImgPick(this)">
 <div class="lbox" id="lbox" onclick="closePhoto()"><img id="lboxImg" src="" alt="商品写真"></div>
@@ -1010,53 +1009,8 @@ function orderBtnHtml(it){
 }
 function openSupplier(id){
   var it=itemById(id); if(!it) return;
-  if(isUrl(it.ref)){ openOrderSite(id); }
+  if(isUrl(it.ref)){ window.open(it.ref,'_blank','noopener'); }
   else { openDetail(id); }   // URLでないときは連絡先(電話/LINE等)を詳細で表示
-}
-// 発注サイトを開く。同時にアプリ側に「ログインのしかた／ログインできない」案内を出しておく
-// （サイトから戻ってきたスタッフが、ログインで詰まったらここから鈴木さんへ知らせられる）
-var KEY_SVG='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3M14 9l2 2"/></svg>';
-function siteHost(u){ var m=(""+(u||"")).match(/^https?:\/\/([^\/?#]+)/i); return m?m[1].replace(/^www\./,""):""; }
-function openOrderSite(id){
-  var it=itemById(id); if(!it||!isUrl(it.ref)) return;
-  window.open(it.ref,'_blank','noopener');   // 押した操作の中で開く（iPadのポップアップ止め対策）
-  renderLoginHelp(id, false);
-  document.getElementById('loginm').className="modal show";
-}
-function closeLoginHelp(){ document.getElementById('loginm').className="modal"; }
-function renderLoginHelp(id, asking){
-  var it=itemById(id); if(!it) return;
-  var site=esc(it.sup||"発注先")+'（'+esc(siteHost(it.ref))+'）';
-  var html='<div class="shead"><div class="nm">発注サイトを開きました</div><button class="x" onclick="closeLoginHelp()">✕</button></div>'
-    +'<div style="font-size:14px;line-height:1.75;margin:4px 2px 10px"><b>'+esc(it.name)+'</b><br>'+site+'</div>'
-    +'<div style="background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.8">'
-    +'<b>ログイン画面が出たとき</b><br>① メールアドレス（ID）の欄をタップ<br>② キーボードの上に出る <b>'+KEY_SVG+' パスワード</b> か、このサイトの名前をタップ<br>③ IDとパスワードが自動で入ります → ログイン</div>'
-    +'<div class="acts"><button class="pbtn o" onclick="window.open(\''+esc(it.ref)+'\',\'_blank\',\'noopener\')">もう一度サイトを開く</button></div>';
-  if(!asking){
-    html+='<div class="acts"><button class="pbtn del" onclick="renderLoginHelp(\''+it.id+'\',true)">'+KEY_SVG+' ログインできない・パスワードが出てこない</button></div>'
-      +'<div class="acts"><button class="pbtn p" onclick="closeLoginHelp()">注文できた（閉じる）</button></div>'
-      +'<div style="font-size:12px;color:var(--sub);margin-top:6px">注文が済んだら、一覧の「発注した」を押してください。</div>';
-  } else {
-    html+='<div style="font-size:14px;font-weight:800;margin:14px 2px 6px">鈴木さんにすぐ知らせます</div>'
-      +'<input id="lhName" class="txt" style="width:100%;margin-bottom:8px" placeholder="あなたの名前（任意）">'
-      +'<input id="lhNote" class="txt" style="width:100%" placeholder="どうなったか（任意）例：パスワードが出てこない">'
-      +'<div class="acts"><button class="pbtn p" id="lhSend" onclick="sendLoginHelp(\''+it.id+'\')">知らせる</button></div>';
-  }
-  document.getElementById('loginBody').innerHTML=html;
-}
-function sendLoginHelp(id){
-  var it=itemById(id); if(!it) return;
-  if(!GAS_URL){ toast("通信の準備ができていません"); return; }
-  var b=document.getElementById('lhSend'); if(b){ if(b.classList.contains('busy')) return; b.classList.add('busy'); b.textContent="送信中…"; }
-  var nm=(document.getElementById('lhName')||{}).value||"", nt=(document.getElementById('lhNote')||{}).value||"";
-  gasJsonp({action:"loginhelp",id:id,name:nm,note:nt,site:siteHost(it.ref)},function(resp){
-    if(resp&&resp.ok){
-      sfx('ok');
-      document.getElementById('loginBody').innerHTML='<div class="shead"><div class="nm">鈴木さんに知らせました</div><button class="x" onclick="closeLoginHelp()">✕</button></div>'
-        +'<div style="font-size:14px;line-height:1.8;margin:6px 2px">数分で鈴木さんにメールが届きます。iPadにパスワードが入ったら、もう一度「発注サイト」から注文してください。<br><br>今日中に必要な品なら、鈴木さんに電話かLINEで「'+esc(it.name)+'の発注サイトにログインできない」と伝えてください。<br><br>まだ注文できていないので、<b>「発注した」は押さないでください。</b></div>'
-        +'<div class="acts"><button class="pbtn p" onclick="closeLoginHelp()">閉じる</button></div>';
-    } else { if(b){ b.classList.remove('busy'); b.textContent="知らせる"; } toast("送れませんでした。鈴木さんに電話かLINEで伝えてください"); }
-  });
 }
 function stepperHtml(id,field,label,val){
   return '<div class="stepper"><span class="lbl">'+label+'</span>'+
@@ -1233,7 +1187,7 @@ function renderDetail(id){
   var supOpts=distinct('sup',['その他']); if(supOpts.indexOf(it.sup)<0 && it.sup) supOpts.push(it.sup);
   var freqOpts=['','毎日','月・水・金','週一(月)'];
   // 上部アクション（AppSheet: リンクを開く／在庫ダッシュボードを見る）
-  var openLink = isUrl(it.ref) ? '<button class="pbtn o" onclick="closeDetail();openOrderSite(\''+it.id+'\')">🔗 リンクを開く（発注サイト）</button>' : '';
+  var openLink = isUrl(it.ref) ? '<button class="pbtn o" onclick="window.open(\''+esc(it.ref)+'\',\'_blank\')">🔗 リンクを開く（発注サイト）</button>' : '';
   // 発注/受領
   var orderBtn=it.ordered
     ?'<input id="rqty" class="rin" type="number" inputmode="decimal" placeholder="受領数(任意)"><button class="pbtn g" onclick="doReceive(\''+it.id+'\')">受領（入荷）</button>'
